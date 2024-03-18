@@ -3,6 +3,7 @@ import logging
 from fastapi import FastAPI, status, Depends
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from indexer.api.api_v1.main import router as router_v1
@@ -29,6 +30,13 @@ app = FastAPI(title="TON Index" if not settings.api_title else settings.api_titl
               openapi_url=settings.api_root_path + '/openapi.json',
               dependencies=[Depends(api_key_dep)])
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.exception_handler(StarletteHTTPException)
 async def http_exception_handler(request, exc):

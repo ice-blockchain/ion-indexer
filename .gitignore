@@ -127,3 +127,7 @@ venv.bak/
 /sandbox
 .env*
 sandbox.ipynb
+
+.idea
+
+commit.sh
