@@ -35,6 +35,7 @@ services:
       internal:
     depends_on:
       - alembic
+    restart: unless-stopped
 
   alembic:
     build:
@@ -92,6 +93,7 @@ services:
       driver: local
       options:
         max-size: 4G
+    restart: unless-stopped
 
 volumes:
   postgres_data:
