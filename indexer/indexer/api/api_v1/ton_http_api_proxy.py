@@ -36,7 +36,7 @@ def from_ton_http_api_response(response: httpx.Response) -> dict:
 async def send_message(
     message: schemas.ExternalMessage = Body(..., description='Message in boc base64 format.')):
     """
-    Send external message to TON network.
+    Send external message to ION network.
     """
     async with httpx.AsyncClient() as client:
         response = await client.post(f'{settings.ton_http_api_endpoint}/sendBocReturnHash', json={'boc': message.boc})
