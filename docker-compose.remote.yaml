@@ -1,0 +1,62 @@
+version: '3.9'
+
+x-indexer-environment: &index-common
+  POSTGRES_HOST:
+  POSTGRES_PORT:
+  POSTGRES_USER:
+  POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+  POSTGRES_DBNAME:
+  POSTGRES_DBROOT:
+  POSTGRES_PUBLISH_PORT:
+
+x-index-api: &index-api
+  TON_INDEXER_API_ROOT_PATH:
+  TON_INDEXER_API_PORT:
+  TON_INDEXER_TON_HTTP_API_ENDPOINT:
+  <<: *index-common
+
+x-index-worker: &index-worker
+  TON_WORKER_FROM:
+  <<: *index-common
+
+services:
+  index-api:
+    build:
+      context: indexer
+      dockerfile: Dockerfile
+    secrets:
+      - postgres_password
+    command: gunicorn indexer.api.main:app -k uvicorn.workers.UvicornWorker --bind=0.0.0.0:8081 -w ${TON_INDEXER_WORKERS:-1}
+    ports:
+      - target: 8081
+        published: ${TON_INDEXER_API_PORT:-8081}
+    environment: *index-api
+    networks:
+      internal:
+    restart: unless-stopped
+
+  index-worker:
+    build:
+      context: ton-index-cpp
+      dockerfile: Dockerfile
+    secrets:
+      - postgres_password
+    volumes:
+      - ${TON_WORKER_DBROOT}:/tondb
+    environment: *index-worker
+    networks:
+      internal:
+    command: --from ${TON_WORKER_FROM:-1} \
+      --max-parallel-tasks ${TON_WORKER_MAX_PARALLEL_TASKS:-1024} \
+      --insert-batch-size ${TON_WORKER_INSERT_BATCH_SIZE:-512} \
+      --insert-parallel-actors ${TON_WORKER_INSERT_PARALLEL_ACTORS:-3}
+    restart: unless-stopped
+
+networks:
+  internal:
+    attachable: true
+    external: false
+
+secrets:
+  postgres_password:
+    file: private/postgres_password
