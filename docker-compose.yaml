@@ -67,6 +67,10 @@ services:
              --insert-batch-size ${TON_WORKER_INSERT_BATCH_SIZE:-512} \
              --insert-parallel-actors ${TON_WORKER_INSERT_PARALLEL_ACTORS:-3}
     restart: unless-stopped
+    logging:
+      driver: local
+      options:
+        max-size: 4G
     depends_on:
       alembic:
         condition: service_completed_successfully
