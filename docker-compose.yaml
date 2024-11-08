@@ -1,6 +1,7 @@
-version: '3.9'
+version: "3.9"
 
 x-indexer-environment: &index-common
+  POSTGRES_DIALECT: ${POSTGRES_DIALECT:-postgresql+asyncpg}
   POSTGRES_HOST:
   POSTGRES_PORT:
   POSTGRES_USER:
@@ -13,43 +14,48 @@ x-index-api: &index-api
   TON_INDEXER_API_ROOT_PATH:
   TON_INDEXER_API_PORT:
   TON_INDEXER_TON_HTTP_API_ENDPOINT:
+  TON_INDEXER_IS_TESTNET:
+  TON_INDEXER_REDIS_DSN: redis://event-cache:6379
   <<: *index-common
 
 x-index-worker: &index-worker
   TON_WORKER_FROM:
+  TON_WORKER_DBROOT: /tondb
+  TON_WORKER_BINARY: ton-index-postgres-v2
+  TON_WORKER_ADDITIONAL_ARGS:
   <<: *index-common
 
 services:
-  index-api:
+  event-cache:
+    image: redis:latest
+    networks:
+      - internal
+    command: redis-server --maxclients 40000
+  event-classifier:
     build:
       context: indexer
       dockerfile: Dockerfile
     secrets:
       - postgres_password
-    command: gunicorn indexer.api.main:app -k uvicorn.workers.UvicornWorker --bind=0.0.0.0:8081 -w ${TON_INDEXER_WORKERS:-1}
+    command: python3 /app/event_classifier.py --pool-size ${TON_INDEXER_WORKERS:-8} --fetch-size 10000 --batch-size 500
+    environment: *index-api
+    networks:
+      internal:
+
+  index-api:
+    build:
+      context: ton-index-go
+      dockerfile: Dockerfile
+    secrets:
+      - postgres_password
+    command: -prefork -threads ${TON_INDEXER_WORKERS:-1}
     ports:
       - target: 8081
         published: ${TON_INDEXER_API_PORT:-8081}
     environment: *index-api
+    restart: always
     networks:
       internal:
-    depends_on:
-      - alembic
-    restart: unless-stopped
-
-  alembic:
-    build:
-      context: indexer
-      dockerfile: Dockerfile
-    environment: *index-api 
-    secrets:
-      - postgres_password
-    command: alembic upgrade head
-    networks:
-      internal:
-    depends_on:
-      postgres:
-        condition: service_healthy
 
   index-worker:
     build:
@@ -58,37 +64,32 @@ services:
     secrets:
       - postgres_password
     volumes:
-      - ${TON_WORKER_DBROOT}:/tondb
+      - ${TON_WORKER_DBROOT:-./}:/tondb
     environment: *index-worker
     networks:
       internal:
-    command: --from ${TON_WORKER_FROM:-1} \ 
-             --max-parallel-tasks ${TON_WORKER_MAX_PARALLEL_TASKS:-1024} \
-             --insert-batch-size ${TON_WORKER_INSERT_BATCH_SIZE:-512} \
-             --insert-parallel-actors ${TON_WORKER_INSERT_PARALLEL_ACTORS:-3}
+    command: --from ${TON_WORKER_FROM:-1}
     restart: unless-stopped
     logging:
       driver: local
       options:
         max-size: 4G
-    depends_on:
-      alembic:
-        condition: service_completed_successfully
 
   postgres:
-    image: postgres:15
+    image: postgres:16
     environment: *index-common
     ports:
       - ${POSTGRES_PUBLISH_PORT:-5432}:5432
     secrets:
       - postgres_password
-    command: postgres -c max_connections=1024 -c shared_buffers=4GB -c work_mem=64MB -c max_wal_size=1GB
+    command: postgres -c max_connections=1024 -c shared_buffers=4GB -c work_mem=64MB -c max_wal_size=1GB -c tcp_keepalives_idle=60 -c tcp_keepalives_interval=60 -c tcp_keepalives_count=60
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
       timeout: 5s
       retries: 5
     shm_size: 2G
+    restart: always
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -97,7 +98,6 @@ services:
       driver: local
       options:
         max-size: 4G
-    restart: unless-stopped
 
 volumes:
   postgres_data:
@@ -110,4 +110,4 @@ networks:
 
 secrets:
   postgres_password:
-    file: private/postgres_password
+    file: ${POSTGRES_PASSWORD_FILE:-private/postgres_password}

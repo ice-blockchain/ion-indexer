@@ -6,7 +6,7 @@ mkdir -p private
 
 # help
 function usage() {
-    echo 'Supported argumets:'
+    echo 'Supported arguments:'
     echo ' -h --help                Show this message'
     echo '    --worker              Do configure TON Index worker'
     exit
@@ -46,6 +46,7 @@ TON_INDEXER_API_TITLE=TON Indexer
 TON_INDEXER_WORKERS=4
 
 TON_INDEXER_TON_HTTP_API_ENDPOINT=${TON_INDEXER_TON_HTTP_API_ENDPOINT}
+
 EOF
 
 if [[ "$WORKER" -eq 1 ]]; then
@@ -54,8 +55,10 @@ echo "Configure Worker"
 cat <<EOF >> .env
 TON_WORKER_DBROOT=${TON_WORKER_DBROOT:-/var/ton-work/db/}
 TON_WORKER_FROM=${TON_WORKER_FROM:-1}
-TON_WORKER_MAX_PARALLEL_TASKS=${TON_WORKER_MAX_PARALLEL_TASKS:-1024}
-TON_WORKER_INSERT_BATCH_SIZE=${TON_WORKER_INSERT_BATCH_SIZE:-512}
-TON_WORKER_INSERT_PARALLEL_ACTORS=${TON_WORKER_INSERT_PARALLEL_ACTORS:-3}
+TON_WORKER_ADDITIONAL_ARGS=${TON_WORKER_ADDITIONAL_ARGS}
+EOF
+else 
+cat <<EOF >> .env
+TON_WORKER_DBROOT=
 EOF
 fi

@@ -1,10 +1,12 @@
 import logging
 
-from typing import Optional, List
+from typing import Optional, List, Union
+from decimal import Decimal
 
 from sqlalchemy import and_, or_
 from sqlalchemy.orm import selectinload, Session, Query, contains_eager, aliased
 from indexer.core.database import (
+    ShardBlock,
     Block,
     Transaction,
     TransactionMessage,
@@ -72,15 +74,14 @@ def get_blocks_by_unix_time(session: Session,
 
 
 def get_masterchain_block_shards(session: Session,
-                                 seqno: int,
-                                 include_mc_block: bool=False):
+                                 seqno: int):
     mc_block_fltr = and_(Block.workchain == MASTERCHAIN_INDEX, 
                          Block.shard == MASTERCHAIN_SHARD, 
                          Block.seqno == seqno)
     shards_fltr = and_(Block.mc_block_workchain == MASTERCHAIN_INDEX, 
                        Block.mc_block_shard == MASTERCHAIN_SHARD,
                        Block.mc_block_seqno == seqno)
-    fltr = or_(mc_block_fltr, shards_fltr) if include_mc_block else shards_fltr
+    fltr = or_(mc_block_fltr, shards_fltr)
     query = session.query(Block).filter(fltr)
     query = query.order_by(Block.workchain, Block.shard, Block.seqno)
     return query.all()
@@ -97,8 +98,7 @@ def get_blocks(session: Session,
                from_start_lt: Optional[int]=None,
                to_start_lt: Optional[int]=None,
                include_mc_block: bool=False,
-               sort_gen_utime: Optional[str]=None,
-               sort_seqno: Optional[str]=None,
+               sort: Optional[str]=None,
                limit: Optional[int]=None,
                offset: Optional[int]=None):
     query = session.query(Block)
@@ -110,30 +110,41 @@ def get_blocks(session: Session,
     if seqno is not None:
         query = query.filter(Block.seqno == seqno)
 
+    column = 'gen_utime'
+
     if root_hash is not None:
         query = query.filter(Block.root_hash == root_hash)
     if file_hash is not None:
         query = query.filter(Block.file_hash == file_hash)
 
     if from_gen_utime is not None:
+        column = 'gen_utime'
         query = query.filter(Block.gen_utime >= from_gen_utime)
     if to_gen_utime is not None:
+        column = 'gen_utime'
         query = query.filter(Block.gen_utime <= to_gen_utime)
 
     if from_start_lt is not None:
+        column = 'lt'
         query = query.filter(Block.start_lt >= from_start_lt)
     if to_start_lt is not None:
+        column = 'lt'
         query = query.filter(Block.start_lt <= to_start_lt)
 
-    if sort_gen_utime == 'asc':
-        query = query.order_by(Block.gen_utime.asc())
-    elif sort_gen_utime == 'desc':
-        query = query.order_by(Block.gen_utime.desc())
-
-    if sort_seqno == 'asc':
-        query = query.order_by(Block.seqno.asc())
-    elif sort_seqno == 'desc':
-        query = query.order_by(Block.seqno.desc())
+    if sort == 'asc':
+        if column == 'seqno':
+            query = query.order_by(Block.workchain.asc(), Block.shard.asc(), Block.seqno.asc())
+        if column == 'gen_utime':
+            query = query.order_by(Block.gen_utime.asc())
+        if column == 'lt':
+            query = query.order_by(Block.start_lt.asc())
+    elif sort == 'desc':
+        if column == 'seqno':
+            query = query.order_by(Block.workchain.desc(), Block.shard.asc(), Block.seqno.asc())
+        if column == 'gen_utime':
+            query = query.order_by(Block.gen_utime.desc())
+        if column == 'lt':
+            query = query.order_by(Block.start_lt.desc())
 
 
     if include_mc_block:
@@ -141,6 +152,16 @@ def get_blocks(session: Session,
 
     query = limit_query(query, limit, offset)
     return query.all()
+
+
+# shards
+def get_shard_state(session: Session,
+               mc_seqno: int):
+    query = session.query(ShardBlock).filter(ShardBlock.mc_seqno == mc_seqno)
+    query = query.options(selectinload(ShardBlock.block))
+    query = query.order_by(ShardBlock.mc_seqno, ShardBlock.workchain, ShardBlock.shard)
+    res = query.all()
+    return [x.block for x in res]
 
 
 # Transaction utils
@@ -169,12 +190,22 @@ def augment_transaction_query(query: Query,
     return query
 
 
-def sort_transaction_query_by_lt(query: Query, sort: str):
+def sort_transaction_query_by_lt(query: Query, sort: str, column: str = 'lt'):
     # second order by hash is needed for consistent pagination
     if sort == 'asc':
-        query = query.order_by(Transaction.lt.asc(), Transaction.hash.desc())
+        if column == 'lt':
+            query = query.order_by(Transaction.lt.asc(), Transaction.hash.asc())
+        elif column == 'now':
+            query = query.order_by(Transaction.now.asc(), Transaction.hash.asc())
+        else:
+            raise ValueError(f'Unknown column "{column}"')
     elif sort == 'desc':
-        query = query.order_by(Transaction.lt.desc(), Transaction.hash.desc())
+        if column == 'lt':
+            query = query.order_by(Transaction.lt.desc(), Transaction.hash.desc())
+        elif column == 'now':
+            query = query.order_by(Transaction.now.desc(), Transaction.hash.desc())
+        else:
+            raise ValueError(f'Unknown column "{column}"')
     elif sort is None or sort == 'none':
         pass
     else:
@@ -236,11 +267,30 @@ def get_transactions_by_masterchain_seqno(session: Session,
     return txs
 
 
+def get_transactions_by_masterchain_seqno_v2(session :Session,
+                                             masterchain_seqno: int, 
+                                             include_msg_body: bool=True, 
+                                             include_block: bool=False,
+                                             include_account_state: bool=True,
+                                             include_trace: int=0,
+                                             limit: Optional[int]=None,
+                                             offset: Optional[int]=None,
+                                             sort: Optional[str]=None):
+    query = session.query(Transaction).filter(Transaction.mc_block_seqno == masterchain_seqno)
+    query = augment_transaction_query(query, include_msg_body, include_block, include_account_state, include_trace)
+    query = sort_transaction_query_by_lt(query, sort)
+    query = limit_query(query, limit, offset)
+    
+    txs = query.all()
+    return txs
+
+
 def get_transactions(session: Session,
                      workchain: Optional[int]=None,
                      shard: Optional[int]=None,
                      seqno: Optional[int]=None,
                      account: Optional[str]=None,
+                     include_account_list: Optional[List[str]]=None,
                      exclude_account_list: Optional[List[str]]=None,
                      hash: Optional[str]=None,
                      lt: Optional[str]=None,
@@ -266,6 +316,8 @@ def get_transactions(session: Session,
 
     if account is not None:
         query = query.filter(Transaction.account == account)  # TODO: index
+    if include_account_list:
+        query = query.filter(Transaction.account.in_(include_account_list))
     if exclude_account_list:
         query = query.filter(Transaction.account.notin_(exclude_account_list))
 
@@ -275,9 +327,14 @@ def get_transactions(session: Session,
     if lt is not None:
         query = query.filter(Transaction.lt == lt)  # TODO: index
 
+    sort_column = 'lt'
+    if (start_lt or end_lt) and (start_utime or end_utime):
+        raise RuntimeError('Cannot query with both lt and utime')
+    elif (start_utime or end_utime):
+        sort_column = 'now'
     query = query_transactions_by_lt(query, start_lt, end_lt)
     query = query_transactions_by_utime(query, start_utime, end_utime)
-    query = sort_transaction_query_by_lt(query, sort)
+    query = sort_transaction_query_by_lt(query, sort, column=sort_column)
     query = augment_transaction_query(query, include_msg_body, include_block, include_account_state, include_trace)
     query = limit_query(query, limit, offset)
     return query.all()
@@ -440,9 +497,15 @@ def get_messages(session: Session,
     if hash is not None:
         query = query.filter(Message.hash == hash)  # TODO: index
     if source is not None:
-        query = query.filter(Message.source == source)  # TODO: index
+        if source == 'null':
+            query = query.filter(Message.source == None)
+        else:
+            query = query.filter(Message.source == source)  # TODO: index
     if destination is not None:
-        query = query.filter(Message.destination == destination)  # TODO: index
+        if destination == 'null':
+            query = query.filter(Message.destination == None)
+        else:
+            query = query.filter(Message.destination == destination)  # TODO: index
     if body_hash is not None:
         query = query.filter(Message.body_hash == body_hash)  # TODO: index
 
@@ -477,11 +540,13 @@ def get_nft_items(session: Session,
     if address is not None:
         query = query.filter(NFTItem.address == address)  # TODO: index
     if index is not None:
-        query = query.filter(NFTItem.index == index)  # TODO: index
+        query = query.filter(NFTItem.index == Decimal(index))  # TODO: index
     if collection_address is not None:
         query = query.filter(NFTItem.collection_address == collection_address)  # TODO: index
     if owner_address is not None:
         query = query.filter(NFTItem.owner_address == owner_address)  # TODO: index
+    if collection_address is not None:
+        query = query.order_by(NFTItem.index.asc())
     query = limit_query(query, limit, offset)
     query = query.options(selectinload(NFTItem.collection))
     return query.all()
@@ -562,7 +627,8 @@ def get_jetton_wallets(session: Session,
     if owner_address is not None:
         query = query.filter(JettonWallet.owner == owner_address)
     if jetton_address is not None:
-        query = query.filter(JettonWallet.jetton == jetton_address)    
+        query = query.filter(JettonWallet.jetton == jetton_address)
+        query = query.order_by(JettonWallet.balance.desc())
     query = limit_query(query, limit, offset)
     return query.all()
 
@@ -697,7 +763,16 @@ def get_top_accounts_by_balance(session: Session,
     query = limit_query(query, limit, offset)
     return query.all()
     
+
 def get_latest_account_state_by_address(session: Session,
                                         address: str):
     query = session.query(LatestAccountState).filter(LatestAccountState.account == address)
     return query.first()
+
+
+def get_latest_account_state(session: Session,
+                             address_list: List[str]):
+    query = session.query(LatestAccountState).filter(LatestAccountState.account.in_(address_list))
+    result = query.all()
+    result = {item.account: item for item in result}
+    return [result.get(x, None) for x in address_list]
