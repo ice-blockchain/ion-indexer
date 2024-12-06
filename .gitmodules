@@ -1,6 +1,6 @@
 [submodule "ion-index-cpp"]
 	path = ion-index-cpp
-	url = https://github.com/toncenter/ton-index-worker
+	url = https://github.com/ice-blockchain/ion-index-worker
 [submodule "ion-index-go"]
 	path = ion-index-go
-	url = https://github.com/toncenter/ton-index-go
+	url = https://github.com/ice-blockchain/ion-index-go
