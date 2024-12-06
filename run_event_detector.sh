@@ -9,7 +9,7 @@ fi
 CONTAINER_NAME=${1}
 PG_DSN=${2}
 
-docker build -t ton-index-event-detector:devel -f indexer/Dockerfile indexer
+docker build -t ion-index-event-detector:devel -f indexer/Dockerfile indexer
 
 docker rm --force ${CONTAINER_NAME}
 docker run -e TON_INDEXER_PG_DSN="$PG_DSN" \
@@ -18,4 +18,4 @@ docker run -e TON_INDEXER_PG_DSN="$PG_DSN" \
            --restart unless-stopped \
            --name ${CONTAINER_NAME} \
            --entrypoint /bin/python3 \
-           -itd ton-index-event-detector:devel -- /app/event_detector.py --verbose
+           -itd ion-index-event-detector:devel -- /app/event_detector.py --verbose

@@ -12,7 +12,7 @@ x-indexer-environment: &indexer-environment
 services:
   index-worker:
     build:
-      context: ton-index-cpp
+      context: ion-index-cpp
       dockerfile: Dockerfile
     secrets:
       - postgres_password
