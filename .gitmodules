@@ -1,6 +1,6 @@
-[submodule "ton-index-cpp"]
-	path = ton-index-cpp
+[submodule "ion-index-cpp"]
+	path = ion-index-cpp
 	url = https://github.com/toncenter/ton-index-worker
-[submodule "ton-index-go"]
-	path = ton-index-go
+[submodule "ion-index-go"]
+	path = ion-index-go
 	url = https://github.com/toncenter/ton-index-go
