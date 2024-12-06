@@ -11,11 +11,11 @@ x-indexer-environment: &index-common
   POSTGRES_PUBLISH_PORT:
 
 x-index-api: &index-api
-  TON_INDEXER_API_ROOT_PATH:
-  TON_INDEXER_API_PORT:
-  TON_INDEXER_TON_HTTP_API_ENDPOINT:
-  TON_INDEXER_IS_TESTNET:
-  TON_INDEXER_REDIS_DSN: redis://event-cache:6379
+  ION_INDEXER_API_ROOT_PATH:
+  ION_INDEXER_API_PORT:
+  ION_INDEXER_TON_HTTP_API_ENDPOINT:
+  ION_INDEXER_IS_TESTNET:
+  ION_INDEXER_REDIS_DSN: redis://event-cache:6379
   <<: *index-common
 
 x-index-worker: &index-worker
@@ -37,7 +37,7 @@ services:
       dockerfile: Dockerfile
     secrets:
       - postgres_password
-    command: python3 /app/event_classifier.py --pool-size ${TON_INDEXER_WORKERS:-8} --fetch-size 10000 --batch-size 500
+    command: python3 /app/event_classifier.py --pool-size ${ION_INDEXER_WORKERS:-8} --fetch-size 10000 --batch-size 500
     environment: *index-api 
     networks:
       internal:
@@ -48,10 +48,10 @@ services:
       dockerfile: Dockerfile
     secrets:
       - postgres_password
-    command: -prefork -threads ${TON_INDEXER_WORKERS:-1}
+    command: -prefork -threads ${ION_INDEXER_WORKERS:-1}
     ports:
       - target: 8081
-        published: ${TON_INDEXER_API_PORT:-8081}
+        published: ${ION_INDEXER_API_PORT:-8081}
     environment: *index-api
     restart: always
     networks:

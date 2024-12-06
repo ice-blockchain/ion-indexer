@@ -7,10 +7,10 @@ x-indexer-environment: &indexer-environment
   POSTGRES_USER:
   POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
   POSTGRES_DBNAME:
-  TON_INDEXER_API_ROOT_PATH:
-  TON_INDEXER_API_TITLE:
-  TON_INDEXER_TON_HTTP_API_ENDPOINT:
-  TON_INDEXER_REDIS_DSN: redis://event-cache:6379
+  ION_INDEXER_API_ROOT_PATH:
+  ION_INDEXER_API_TITLE:
+  ION_INDEXER_TON_HTTP_API_ENDPOINT:
+  ION_INDEXER_REDIS_DSN: redis://event-cache:6379
 
 services:
   event-cache:
@@ -31,7 +31,7 @@ services:
       dockerfile: Dockerfile
     secrets:
       - postgres_password
-    command: python3 /app/event_classifier.py --pool-size ${TON_INDEXER_WORKERS:-8} --fetch-size 64000 --batch-size 2000
+    command: python3 /app/event_classifier.py --pool-size ${ION_INDEXER_WORKERS:-8} --fetch-size 64000 --batch-size 2000
     environment: *indexer-environment 
     deploy:
       mode: replicated

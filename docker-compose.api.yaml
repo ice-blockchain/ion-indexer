@@ -7,24 +7,24 @@ x-indexer-environment: &indexer-environment
   POSTGRES_USER:
   POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
   POSTGRES_DBNAME:
-  TON_INDEXER_API_ROOT_PATH:
-  TON_INDEXER_API_TITLE:
-  TON_INDEXER_TON_HTTP_API_ENDPOINT:
-  TON_INDEXER_IS_TESTNET:
+  ION_INDEXER_API_ROOT_PATH:
+  ION_INDEXER_API_TITLE:
+  ION_INDEXER_TON_HTTP_API_ENDPOINT:
+  ION_INDEXER_IS_TESTNET:
 
 services:
   index-api-go:
-    image: ${DOCKER_REGISTRY:-localhost:5000}/ton-index-go:${IMAGE_TAG:?}
+    image: ${DOCKER_REGISTRY:-localhost:5000}/ion-index-go:${IMAGE_TAG:?}
     build:
-      context: ton-index-go
+      context: ion-index-go
       dockerfile: Dockerfile
     secrets:
       - postgres_password
-    command: -prefork -threads ${TON_INDEXER_WORKERS:-1}
+    command: -prefork -threads ${ION_INDEXER_WORKERS:-1}
     init: true
     ports:
       - target: 8081
-        published: ${TON_INDEXER_API_PORT:-8081}
+        published: ${ION_INDEXER_API_PORT:-8081}
         protocol: tcp
         mode: host
     environment: *indexer-environment

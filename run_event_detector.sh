@@ -12,7 +12,7 @@ PG_DSN=${2}
 docker build -t ion-index-event-detector:devel -f indexer/Dockerfile indexer
 
 docker rm --force ${CONTAINER_NAME}
-docker run -e TON_INDEXER_PG_DSN="$PG_DSN" \
+docker run -e ION_INDEXER_PG_DSN="$PG_DSN" \
            -e TQDM_NCOLS=0 \
            -e TQDM_POSITION=-1 \
            --restart unless-stopped \
