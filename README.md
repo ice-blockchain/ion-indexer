@@ -4,7 +4,7 @@
 > Be careful upgrading the indexer. Versions with different major and minor have different schemas and they are incompatible with each other.
 
 
-ION Indexer stores blocks, transactions, messages, NFTs, JetIONs and DNS domains in PostgreSQL database and provides convenient API.
+ION Indexer stores blocks, transactions, messages, NFTs, Jettons and DNS domains in PostgreSQL database and provides convenient API.
 
 ION node stores data in a key-value database RocksDB.  While RocksDB excels in specific use cases, it isn't versatile enough for diverse queries. An SQL database is perfectly suitable for the storage and retrieval of data. ION Indexer reads data from RocksDB and inserts it into PostgreSQL. Masterchain blocks are used as an atomic unit of insertion to guarantee data integrity. Indexes allow the efficient fetching of required data from a database.
 
@@ -25,7 +25,7 @@ Requirements:
   * Worker: 4 CPU, 32 GB RAM, SSD recommended (for archival: 8 CPUs, 64 GB RAM, SSD recommended).
 
 Do the following steps to setup ION Indexer:
-* Clone repository: `git clone --recursive --branch ion-fork https://github.com/ice-blockchain/ion-indexer.git && cd ./ion-indexer`.
+* Clone repository: `git clone --recursive --branch master https://github.com/ice-blockchain/ion-indexer.git && cd ./ion-indexer`.
 * Create *.env* file with command `./configure.sh`.
   * ./configure.sh will create .env file only with indexer and PostgreSQL configuration data. Use --worker flag to add ION Index worker configuration data too.
 * Adjust parameters in *.env* file (see [list of available parameters](#available-parameters)).
