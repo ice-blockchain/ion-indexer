@@ -55,7 +55,7 @@ fi
 echo "Task args: \'$TASK_ARGS\'"
 cat <<EOF | sudo tee /etc/systemd/system/index-worker.service
 [Unit]
-Description = ton index worker service
+Description = ION Index worker service
 After = network.target
 
 [Service]

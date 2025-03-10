@@ -1,21 +1,21 @@
-# TON Indexer
+# ION Indexer
 
 > [!NOTE]  
-> This repository's master branch hosts the TON Indexer designed for direct reading from the TON Node database. If you are looking for an indexer that operates through `tonlib + liteserver`, please refer to the branch [legacy](https://github.com/toncenter/ton-indexer/tree/legacy).
+> This repository's master branch hosts the ION Indexer designed for direct reading from the TON Node database. If you are looking for an indexer that operates through `tonlib + liteserver`, please refer to the branch [legacy](https://github.com/toncenter/ton-indexer/tree/legacy).
 
 > [!NOTE]
 > Be careful upgrading the indexer. Versions with different major and minor have different schemas and they are incompatible with each other.
 
 
-TON Indexer stores blocks, transactions, messages, NFTs, Jettons and DNS domains in PostgreSQL database and provides convenient API.
+ION Indexer stores blocks, transactions, messages, NFTs, Jettons and DNS domains in PostgreSQL database and provides convenient API.
 
-TON node stores data in a key-value database RocksDB.  While RocksDB excels in specific use cases, it isn't versatile enough for diverse queries. An SQL database is perfectly suitable for the storage and retrieval of data. TON Indexer reads data from RocksDB and inserts it into PostgreSQL. Masterchain blocks are used as an atomic unit of insertion to guarantee data integrity. Indexes allow the efficient fetching of required data from a database.
+TON node stores data in a key-value database RocksDB.  While RocksDB excels in specific use cases, it isn't versatile enough for diverse queries. An SQL database is perfectly suitable for the storage and retrieval of data. ION Indexer reads data from RocksDB and inserts it into PostgreSQL. Masterchain blocks are used as an atomic unit of insertion to guarantee data integrity. Indexes allow the efficient fetching of required data from a database.
 
-TON Indexer stack consists of:
+ION Indexer stack consists of:
 1. `postgres`: PostgreSQL server to store indexed data and perform queries.
 2. `index-api`: [Fiber](https://github.com/gofiber/fiber) server with convenient endpoints to access the database.
 3. `event-classifier`: trace classification service.
-4. `index-worker`: TON Index worker to read and parse data from TON node database. This service must be run on the machine with a working TON Node.
+4. `index-worker`: ION Index worker to read and parse data from TON node database. This service must be run on the machine with a working TON Node.
 
 ## How to run
 
@@ -27,10 +27,10 @@ Requirements:
   * Database and API: 4 CPU, 32 GB RAM, 200GB disk, SSD recommended (more than 1TB required for archival indexing).
   * Worker: 4 CPU, 32 GB RAM, SSD recommended (for archival: 8 CPUs, 64 GB RAM, SSD recommended).
 
-Do the following steps to setup TON Indexer:
+Do the following steps to setup ION Indexer:
 * Clone repository: `git clone --recursive --branch master https://github.com/toncenter/ton-indexer.git && cd ./ton-indexer`.
 * Create *.env* file with command `./configure.sh`.
-  * ./configure.sh will create .env file only with indexer and PostgreSQL configuration data. Use --worker flag to add TON Index worker configuration data too.
+  * ./configure.sh will create .env file only with indexer and PostgreSQL configuration data. Use --worker flag to add ION Index worker configuration data too.
 * Adjust parameters in *.env* file (see [list of available parameters](#available-parameters)).
 * Set PostgreSQL password `echo -n "MY_PASSWORD" > private/postgres_password`
 * Build docker images: `docker compose build postgres event-classifier index-api`.
@@ -60,11 +60,11 @@ Do the following steps to setup TON Indexer:
 
 ## Swagger
 
-To test API, built-in swagger can be used. It is available after running `docker compose` at `localhost:8081/api/v3`
+To test API, built-in swagger can be used. It is available after running `docker compose` at `localhost:8081/indexer/v3`
 
 # FAQ
 
-## How to point TON Index worker to existing PostgreSQL instance
+## How to point ION Index worker to existing PostgreSQL instance
 * Remove PostgreSQL container: `docker compose rm postgres` (add flag `-v` to remove volumes).
 * Setup PostgreSQL credentials in *.env* file.
 * Run index worker: `docker compose up -d index-worker index-api event-classifier event-cache`.
