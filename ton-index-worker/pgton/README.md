@@ -13,4 +13,4 @@ Run the following commands on machine with PostgreSQL:
 * Create build directory: `mkdir build && cd build`.
 * Configure and build: `cmake -DCMAKE_BUILD_TYPE=Release .. && make -j32 pgton`.
 * Install binaries: `cd pgton && sudo make install`.
-* Drop existing database and start TON Index worker with flag `--custom-types` to create a scheme with custom types.
+* Drop existing database and start ION Index worker with flag `--custom-types` to create a scheme with custom types.

@@ -8,7 +8,7 @@ mkdir -p private
 function usage() {
     echo 'Supported arguments:'
     echo ' -h --help                Show this message'
-    echo '    --worker              Do configure TON Index worker'
+    echo '    --worker              Do configure ION Index worker'
     exit
 }
 
@@ -32,7 +32,7 @@ set -- "${POSITIONAL_ARGS[@]}"
 
 # interactive config
 cat <<EOF > .env
-# TON Indexer config
+# ION Indexer config
 POSTGRES_HOST=${POSTGRES_HOST:-postgres}
 POSTGRES_PORT=${POSTGRES_PORT:-5432}
 POSTGRES_USER=${POSTGRES_USER:-postgres}
@@ -42,7 +42,7 @@ POSTGRES_PUBLISH_PORT=${POSTGRES_PUBLISH_PORT:-5432}
 
 TON_INDEXER_API_ROOT_PATH=
 TON_INDEXER_API_PORT=8081
-TON_INDEXER_API_TITLE=TON Indexer
+TON_INDEXER_API_TITLE=ION Indexer
 TON_INDEXER_WORKERS=4
 
 TON_INDEXER_TON_HTTP_API_ENDPOINT=${TON_INDEXER_TON_HTTP_API_ENDPOINT}
