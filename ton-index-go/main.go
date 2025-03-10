@@ -53,9 +53,9 @@ var masterPool *index.DbClient
 var settings Settings
 var emulatedTracesRepository *emulated.EmulatedTracesRepository
 
-//	@title			TON Index (Go)
+//	@title			ION Index (Go)
 //	@version		1.1.0
-//	@description	TON Index collects data from a full node to PostgreSQL database and provides convenient API to an indexed blockchain.
+//	@description	ION Index collects data from a full node to PostgreSQL database and provides convenient API to an indexed blockchain.
 //  @query.collection.format multi
 
 //	@securitydefinitions.apikey APIKeyHeader
@@ -73,7 +73,7 @@ var emulatedTracesRepository *emulated.EmulatedTracesRepository
 // @Produce      json
 // @success		200	{object}	index.MasterchainInfo
 // @failure		400	{object}	index.RequestError
-// @router			/api/v3/masterchainInfo [get]
+// @router			/indexer/v3/masterchainInfo [get]
 // @security		APIKeyHeader
 // @security		APIKeyQuery
 func GetMasterchainInfo(c *fiber.Ctx) error {
@@ -104,7 +104,7 @@ func GetMasterchainInfo(c *fiber.Ctx) error {
 // @param limit query int32 false "Limit number of queried rows. Use with *offset* to batch read." minimum(1) maximum(1000) default(10)
 // @param offset query int32 false "Skip first N rows. Use with *limit* to batch read." minimum(0) default(0)
 // @param sort query string false "Sort results by UTC timestamp." Enums(asc, desc) default(desc)
-// @router			/api/v3/blocks [get]
+// @router			/indexer/v3/blocks [get]
 // @security		APIKeyHeader
 // @security		APIKeyQuery
 func GetBlocks(c *fiber.Ctx) error {
@@ -149,7 +149,7 @@ func GetBlocks(c *fiber.Ctx) error {
 // @success		200	{object}	index.TransactionsResponse
 // @failure		400	{object}	index.RequestError
 // @param	seqno query int32 true "Masterchain block seqno."
-// @router			/api/v3/masterchainBlockShardState [get]
+// @router			/indexer/v3/masterchainBlockShardState [get]
 // @security		APIKeyHeader
 // @security		APIKeyQuery
 func GetShards(c *fiber.Ctx) error {
@@ -182,7 +182,7 @@ func GetShards(c *fiber.Ctx) error {
 // @param	seqno query int32 true "Masterchain block seqno."
 // @param   limit query int32 false "Limit number of queried rows. Use with *offset* to batch read." minimum(1) maximum(1000) default(10)
 // @param   offset query int32 false "Skip first N rows. Use with *limit* to batch read." minimum(0) default(0)
-// @router			/api/v3/masterchainBlockShards [get]
+// @router			/indexer/v3/masterchainBlockShards [get]
 // @security		APIKeyHeader
 // @security		APIKeyQuery
 func GetShardsDiff(c *fiber.Ctx) error {
@@ -231,7 +231,7 @@ func GetShardsDiff(c *fiber.Ctx) error {
 // @param limit query int32 false "Limit number of queried rows. Use with *offset* to batch read." minimum(1) maximum(1000) default(10)
 // @param offset query int32 false "Skip first N rows. Use with *limit* to batch read." minimum(0) default(0)
 // @param sort query string false "Sort transactions by lt." Enums(asc, desc) default(desc)
-// @router			/api/v3/transactions [get]
+// @router			/indexer/v3/transactions [get]
 // @security		APIKeyHeader
 // @security		APIKeyQuery
 func GetTransactions(c *fiber.Ctx) error {
@@ -282,7 +282,7 @@ func GetTransactions(c *fiber.Ctx) error {
 // @failure		400	{object}	index.RequestError
 // @param 	account	query []string false "List of account addresses to get transactions. Can be sent in hex, base64 or base64url form." collectionFormat(multi)
 // @param trace_id query []string false "Find transactions by trace id."
-// @router			/api/v3/pendingTransactions [get]
+// @router			/indexer/v3/pendingTransactions [get]
 // @security		APIKeyHeader
 // @security		APIKeyQuery
 func GetPendingTransactions(c *fiber.Ctx) error {
@@ -330,7 +330,7 @@ func GetPendingTransactions(c *fiber.Ctx) error {
 // @failure		400	{object}	index.RequestError
 // @param hash query string false "Transaction hash."
 // @param direction query string false "Direction of message." Enums(in, out)
-// @router			/api/v3/adjacentTransactions [get]
+// @router			/indexer/v3/adjacentTransactions [get]
 // @security		APIKeyHeader
 // @security		APIKeyQuery
 func GetAdjacentTransactions(c *fiber.Ctx) error {
@@ -364,7 +364,7 @@ func GetAdjacentTransactions(c *fiber.Ctx) error {
 // @param limit query int32 false "Limit number of queried rows. Use with *offset* to batch read." minimum(1) maximum(1000) default(10)
 // @param offset query int32 false "Skip first N rows. Use with *limit* to batch read." minimum(0) default(0)
 // @param sort query string false "Sort transactions by lt." Enums(asc, desc) default(desc)
-// @router			/api/v3/transactionsByMasterchainBlock [get]
+// @router			/indexer/v3/transactionsByMasterchainBlock [get]
 // @security		APIKeyHeader
 // @security		APIKeyQuery
 func GetTransactionsByMasterchainBlock(c *fiber.Ctx) error {
@@ -409,7 +409,7 @@ func GetTransactionsByMasterchainBlock(c *fiber.Ctx) error {
 // @param limit query int32 false "Limit number of queried rows. Use with *offset* to batch read." minimum(1) maximum(1000) default(10)
 // @param offset query int32 false "Skip first N rows. Use with *limit* to batch read." minimum(0) default(0)
 // // @param sort query string false "Sort transactions by lt." Enums(asc, desc) default(desc)
-// @router			/api/v3/transactionsByMessage [get]
+// @router			/indexer/v3/transactionsByMessage [get]
 // @security		APIKeyHeader
 // @security		APIKeyQuery
 func GetTransactionsByMessage(c *fiber.Ctx) error {
@@ -466,7 +466,7 @@ func GetTransactionsByMessage(c *fiber.Ctx) error {
 // @param limit query int32 false "Limit number of queried rows. Use with *offset* to batch read." minimum(1) maximum(1000) default(10)
 // @param offset query int32 false "Skip first N rows. Use with *limit* to batch read." minimum(0) default(0)
 // @param sort query string false "Sort transactions by lt." Enums(asc, desc) default(desc)
-// @router			/api/v3/messages [get]
+// @router			/indexer/v3/messages [get]
 // @security		APIKeyHeader
 // @security		APIKeyQuery
 func GetMessages(c *fiber.Ctx) error {
@@ -522,7 +522,7 @@ func GetMessages(c *fiber.Ctx) error {
 // @success 200 {object} index.AddressBook
 // @failure 400 {object} index.RequestError
 // @param address query []string true "List of addresses in any form to get address book. Max: 1024." collectionFormat(multi)
-// @router /api/v3/addressBook [get]
+// @router /indexer/v3/addressBook [get]
 // @security		APIKeyHeader
 // @security		APIKeyQuery
 func GetAddressBook(c *fiber.Ctx) error {
@@ -552,7 +552,7 @@ func GetAddressBook(c *fiber.Ctx) error {
 // @success 200 {object} index.Metadata
 // @failure 400 {object} index.RequestError
 // @param address query []string true "List of addresses in any form to get address metadata. Max: 1024." collectionFormat(multi)
-// @router /api/v3/metadata [get]
+// @router /indexer/v3/metadata [get]
 // @security		APIKeyHeader
 // @security		APIKeyQuery
 func GetMetadata(c *fiber.Ctx) error {
@@ -586,7 +586,7 @@ func GetMetadata(c *fiber.Ctx) error {
 // @param include_boc query bool false "Include code and data BOCs. Default: true" default(true)
 // // @param limit query int32 false "Limit number of queried rows. Use with *offset* to batch read." minimum(1) maximum(1000) default(10)
 // // @param offset query int32 false "Skip first N rows. Use with *limit* to batch read." minimum(0) default(0)
-// @router /api/v3/accountStates [get]
+// @router /indexer/v3/accountStates [get]
 // @security		APIKeyHeader
 // @security		APIKeyQuery
 func GetAccountStates(c *fiber.Ctx) error {
@@ -633,7 +633,7 @@ func GetAccountStates(c *fiber.Ctx) error {
 // @success 200 {object} index.WalletStatesResponse
 // @failure 400 {object} index.RequestError
 // @param address query []string true "List of addresses in any form to get address book. Max: 1024." collectionFormat(multi)
-// @router /api/v3/walletStates [get]
+// @router /indexer/v3/walletStates [get]
 // @security		APIKeyHeader
 // @security		APIKeyQuery
 func GetWalletStates(c *fiber.Ctx) error {
@@ -675,7 +675,7 @@ func GetWalletStates(c *fiber.Ctx) error {
 // @param include_boc query bool false "Include code and data BOCs. Default: true" default(true)
 // // @param limit query int32 false "Limit number of queried rows. Use with *offset* to batch read." minimum(1) maximum(1000) default(10)
 // // @param offset query int32 false "Skip first N rows. Use with *limit* to batch read." minimum(0) default(0)
-// @router /api/v3/dnsEntities [get]
+// @router /indexer/v3/dnsEntities [get]
 // @security		APIKeyHeader
 // @security		APIKeyQuery
 func GetDNSEntities(c *fiber.Ctx) error {
@@ -696,7 +696,7 @@ func GetDNSEntities(c *fiber.Ctx) error {
 // @param owner_address query []string false "Address of collection owner in any form. Max: 1024." collectionFormat(multi)
 // @param limit query int32 false "Limit number of queried rows. Use with *offset* to batch read." minimum(1) maximum(1000) default(10)
 // @param offset query int32 false "Skip first N rows. Use with *limit* to batch read." minimum(0) default(0)
-// @router /api/v3/nft/collections [get]
+// @router /indexer/v3/nft/collections [get]
 // @security		APIKeyHeader
 // @security		APIKeyQuery
 func GetNFTCollections(c *fiber.Ctx) error {
@@ -740,7 +740,7 @@ func GetNFTCollections(c *fiber.Ctx) error {
 // @param index query []string false "Index of item for given collection. Max: 1000." collectionFormat(multi)
 // @param limit query int32 false "Limit number of queried rows. Use with *offset* to batch read." minimum(1) maximum(1000) default(10)
 // @param offset query int32 false "Skip first N rows. Use with *limit* to batch read." minimum(0) default(0)
-// @router /api/v3/nft/items [get]
+// @router /indexer/v3/nft/items [get]
 // @security		APIKeyHeader
 // @security		APIKeyQuery
 func GetNFTItems(c *fiber.Ctx) error {
@@ -789,7 +789,7 @@ func GetNFTItems(c *fiber.Ctx) error {
 // @param limit query int32 false "Limit number of queried rows. Use with *offset* to batch read." minimum(1) maximum(1000) default(10)
 // @param offset query int32 false "Skip first N rows. Use with *limit* to batch read." minimum(0) default(0)
 // @param sort query string false "Sort transactions by lt." Enums(asc, desc) default(desc)
-// @router /api/v3/nft/transfers [get]
+// @router /indexer/v3/nft/transfers [get]
 // @security		APIKeyHeader
 // @security		APIKeyQuery
 func GetNFTTransfers(c *fiber.Ctx) error {
@@ -846,7 +846,7 @@ func GetNFTTransfers(c *fiber.Ctx) error {
 // @failure		400	{object}	index.RequestError
 // @param limit query int32 false "Limit number of queried rows. Use with *offset* to batch read." minimum(1) maximum(1000) default(10)
 // @param offset query int32 false "Skip first N rows. Use with *limit* to batch read." minimum(0) default(0)
-// @router			/api/v3/topAccountsByBalance [get]
+// @router			/indexer/v3/topAccountsByBalance [get]
 // @security		APIKeyHeader
 // @security		APIKeyQuery
 func GetTopAccountsByBalance(c *fiber.Ctx) error {
@@ -878,7 +878,7 @@ func GetTopAccountsByBalance(c *fiber.Ctx) error {
 // @param admin_address query []string false "Address of Jetton Master's admin in any form. Max: 1024." collectionFormat(multi)
 // @param limit query int32 false "Limit number of queried rows. Use with *offset* to batch read." minimum(1) maximum(1000) default(10)
 // @param offset query int32 false "Skip first N rows. Use with *limit* to batch read." minimum(0) default(0)
-// @router /api/v3/jetton/masters [get]
+// @router /indexer/v3/jetton/masters [get]
 // @security		APIKeyHeader
 // @security		APIKeyQuery
 func GetJettonMasters(c *fiber.Ctx) error {
@@ -923,7 +923,7 @@ func GetJettonMasters(c *fiber.Ctx) error {
 // @param limit query int32 false "Limit number of queried rows. Use with *offset* to batch read." minimum(1) maximum(1000) default(10)
 // @param offset query int32 false "Skip first N rows. Use with *limit* to batch read." minimum(0) default(0)
 // @param sort query string false "Sort jetton wallets by balance. **Warning:** results may be inconsistent during the read with limit and offset." Enums(asc, desc)
-// @router /api/v3/jetton/wallets [get]
+// @router /indexer/v3/jetton/wallets [get]
 // @security		APIKeyHeader
 // @security		APIKeyQuery
 func GetJettonWallets(c *fiber.Ctx) error {
@@ -975,7 +975,7 @@ func GetJettonWallets(c *fiber.Ctx) error {
 // @param limit query int32 false "Limit number of queried rows. Use with *offset* to batch read." minimum(1) maximum(1000) default(10)
 // @param offset query int32 false "Skip first N rows. Use with *limit* to batch read." minimum(0) default(0)
 // @param sort query string false "Sort transactions by lt." Enums(asc, desc) default(desc)
-// @router /api/v3/jetton/transfers [get]
+// @router /indexer/v3/jetton/transfers [get]
 // @security		APIKeyHeader
 // @security		APIKeyQuery
 func GetJettonTransfers(c *fiber.Ctx) error {
@@ -1042,7 +1042,7 @@ func GetJettonTransfers(c *fiber.Ctx) error {
 // @param limit query int32 false "Limit number of queried rows. Use with *offset* to batch read." minimum(1) maximum(1000) default(10)
 // @param offset query int32 false "Skip first N rows. Use with *limit* to batch read." minimum(0) default(0)
 // @param sort query string false "Sort transactions by lt." Enums(asc, desc) default(desc)
-// @router /api/v3/jetton/burns [get]
+// @router /indexer/v3/jetton/burns [get]
 // @security		APIKeyHeader
 // @security		APIKeyQuery
 func GetJettonBurns(c *fiber.Ctx) error {
@@ -1107,7 +1107,7 @@ func GetJettonBurns(c *fiber.Ctx) error {
 // @param limit query int32 false "Limit number of queried rows. Use with *offset* to batch read." minimum(1) maximum(1000) default(10)
 // @param offset query int32 false "Skip first N rows. Use with *limit* to batch read." minimum(0) default(0)
 // @param sort query string false "Sort traces by lt." Enums(asc, desc) default(desc)
-// @router			/api/v3/traces [get]
+// @router			/indexer/v3/traces [get]
 // @security		APIKeyHeader
 // @security		APIKeyQuery
 func GetTraces(c *fiber.Ctx) error {
@@ -1134,7 +1134,7 @@ func GetTraces(c *fiber.Ctx) error {
 		return index.IndexError{Code: 422, Message: "only one of account, trace_id, tx_hash, msg_hash should be specified"}
 	}
 
-	if c.Path() == "/api/v3/events" {
+	if c.Path() == "/indexer/v3/events" {
 		traces_req.IncludeActions = true
 	}
 
@@ -1147,7 +1147,7 @@ func GetTraces(c *fiber.Ctx) error {
 	// }
 	index.SubstituteImgproxyBaseUrl(&metadata, settings.ImgProxyBaseUrl)
 
-	if c.Path() == "/api/v3/events" {
+	if c.Path() == "/indexer/v3/events" {
 		txs_resp := index.DeprecatedEventsResponse{Events: res, AddressBook: book, Metadata: metadata}
 		return c.JSON(txs_resp)
 	}
@@ -1166,7 +1166,7 @@ func GetTraces(c *fiber.Ctx) error {
 // @param account query string false "List of account addresses to get transactions. Can be sent in hex, base64 or base64url form."
 // @param trace_id query []string false "Find trace by trace id."
 // @param tx_hash query []string false "Find trace by existing transaction hash."
-// @router			/api/v3/pendingTraces [get]
+// @router			/indexer/v3/pendingTraces [get]
 // @security		APIKeyHeader
 // @security		APIKeyQuery
 func GetPendingTraces(c *fiber.Ctx) error {
@@ -1236,7 +1236,7 @@ func GetPendingTraces(c *fiber.Ctx) error {
 // @param limit query int32 false "Limit number of queried rows. Use with *offset* to batch read." minimum(1) maximum(1000) default(10)
 // @param offset query int32 false "Skip first N rows. Use with *limit* to batch read." minimum(0) default(0)
 // @param sort query string false "Sort actions by lt." Enums(asc, desc) default(desc)
-// @router			/api/v3/actions [get]
+// @router			/indexer/v3/actions [get]
 // @security		APIKeyHeader
 // @security		APIKeyQuery
 func GetActions(c *fiber.Ctx) error {
@@ -1285,7 +1285,7 @@ func GetActions(c *fiber.Ctx) error {
 // @failure		400	{object}	index.RequestError
 // @param account query string false "List of account addresses to get actions. Can be sent in hex, base64 or base64url form."
 // @param trace_id query []string false "Find actions by trace id"
-// @router			/api/v3/pendingActions [get]
+// @router			/indexer/v3/pendingActions [get]
 // @security		APIKeyHeader
 // @security		APIKeyQuery
 func GetPendingActions(c *fiber.Ctx) error {
@@ -1334,7 +1334,7 @@ func GetPendingActions(c *fiber.Ctx) error {
 // @failure 400 {object} index.RequestError
 // @param address query string true "Account address in any form."
 // @param use_v2 query bool false "Use method from api/v2. Not recommended" default(true)
-// @router /api/v3/walletInformation [get]
+// @router /indexer/v3/walletInformation [get]
 // @security		APIKeyHeader
 // @security		APIKeyQuery
 func GetV2WalletInformation(c *fiber.Ctx) error {
@@ -1407,7 +1407,7 @@ func GetV2WalletInformation(c *fiber.Ctx) error {
 // @failure 400 {object} index.RequestError
 // @param address query string true "Account address in any form."
 // @param use_v2 query bool false "Use method from api/v2. Not recommended" default(true)
-// @router /api/v3/addressInformation [get]
+// @router /indexer/v3/addressInformation [get]
 // @security		APIKeyHeader
 // @security		APIKeyQuery
 func GetV2AddressInformation(c *fiber.Ctx) error {
@@ -1468,7 +1468,7 @@ func GetV2AddressInformation(c *fiber.Ctx) error {
 // @success 200 {object} index.V2SendMessageResult
 // @failure 400 {object} index.RequestError
 // @param boc body index.V2SendMessageRequest true "Message in boc base64 format."
-// @router /api/v3/message [post]
+// @router /indexer/v3/message [post]
 // @security		APIKeyHeader
 // @security		APIKeyQuery
 func PostV2SendMessage(c *fiber.Ctx) error {
@@ -1500,7 +1500,7 @@ func PostV2SendMessage(c *fiber.Ctx) error {
 // @success 200 {object} index.V2EstimateFeeResult
 // @failure 400 {object} index.RequestError
 // @param request body index.V2EstimateFeeRequest true "Estimate fee request."
-// @router /api/v3/estimateFee [post]
+// @router /indexer/v3/estimateFee [post]
 // @security		APIKeyHeader
 // @security		APIKeyQuery
 func PostV2EstimateFee(c *fiber.Ctx) error {
@@ -1544,7 +1544,7 @@ func PostV2EstimateFee(c *fiber.Ctx) error {
 // @success 200 {object} index.V2RunGetMethodRequest
 // @failure 400 {object} index.RequestError
 // @param request body index.V2RunGetMethodRequest true "Run Get-method request"
-// @router /api/v3/runGetMethod [post]
+// @router /indexer/v3/runGetMethod [post]
 // @security		APIKeyHeader
 // @security		APIKeyQuery
 func PostV2RunGetMethod(c *fiber.Ctx) error {
@@ -1582,7 +1582,7 @@ func PostV2RunGetMethod(c *fiber.Ctx) error {
 // // @param my_hash query []string false "Hash" collectionFormat(multi)
 // // @param my_addr query []string false "Address" collectionFormat(multi)
 // // @param my_shard query []string false "ShardId" collectionFormat(multi)
-// // @router			/api/v3/__testMethod [get]
+// // @router			/indexer/v3/__testMethod [get]
 // // @security		APIKeyHeader
 // // @security		APIKeyQuery
 func GetTestMethod(c *fiber.Ctx) error {
@@ -1823,7 +1823,7 @@ func main() {
 	emulatedTracesRepository, err = emulated.NewRepository(redis_dsn)
 	// web server
 	config := fiber.Config{
-		AppName:        "TON Index API",
+		AppName:        "ION Index API",
 		Concurrency:    256 * 1024,
 		Prefork:        settings.Prefork,
 		ErrorHandler:   ErrorHandlerFunc,
@@ -1846,7 +1846,7 @@ func main() {
 	})
 
 	// endpoints
-	app.Use("/api/v3/", func(c *fiber.Ctx) error {
+	app.Use("/indexer/v3/", func(c *fiber.Ctx) error {
 		c.Accepts("application/json")
 		start := time.Now()
 		err := c.Next()
@@ -1862,74 +1862,74 @@ func main() {
 	app.Get("/healthcheck", HealthCheck)
 
 	// masterchain info
-	app.Get("/api/v3/masterchainInfo", GetMasterchainInfo)
-	app.Get("/api/v3/masterchainBlockShardState", GetShards)
-	app.Get("/api/v3/masterchainBlockShards", GetShardsDiff)
+	app.Get("/indexer/v3/masterchainInfo", GetMasterchainInfo)
+	app.Get("/indexer/v3/masterchainBlockShardState", GetShards)
+	app.Get("/indexer/v3/masterchainBlockShards", GetShardsDiff)
 
 	// blocks
-	app.Get("/api/v3/blocks", GetBlocks)
+	app.Get("/indexer/v3/blocks", GetBlocks)
 
 	// transactions
-	app.Get("/api/v3/pendingTransactions", GetPendingTransactions)
-	app.Get("/api/v3/transactions", GetTransactions)
-	app.Get("/api/v3/transactionsByMasterchainBlock", GetTransactionsByMasterchainBlock)
-	app.Get("/api/v3/transactionsByMessage", GetTransactionsByMessage)
-	app.Get("/api/v3/adjacentTransactions", GetAdjacentTransactions)
+	app.Get("/indexer/v3/pendingTransactions", GetPendingTransactions)
+	app.Get("/indexer/v3/transactions", GetTransactions)
+	app.Get("/indexer/v3/transactionsByMasterchainBlock", GetTransactionsByMasterchainBlock)
+	app.Get("/indexer/v3/transactionsByMessage", GetTransactionsByMessage)
+	app.Get("/indexer/v3/adjacentTransactions", GetAdjacentTransactions)
 
 	// messages
-	app.Get("/api/v3/messages", GetMessages)
+	app.Get("/indexer/v3/messages", GetMessages)
 
 	// stats
-	app.Get("/api/v3/topAccountsByBalance", GetTopAccountsByBalance)
+	app.Get("/indexer/v3/topAccountsByBalance", GetTopAccountsByBalance)
 
 	// account methods
-	app.Get("/api/v3/addressBook", GetAddressBook)
-	app.Get("/api/v3/metadata", GetMetadata)
-	app.Get("/api/v3/accountStates", GetAccountStates)
-	app.Get("/api/v3/walletStates", GetWalletStates)
+	app.Get("/indexer/v3/addressBook", GetAddressBook)
+	app.Get("/indexer/v3/metadata", GetMetadata)
+	app.Get("/indexer/v3/accountStates", GetAccountStates)
+	app.Get("/indexer/v3/walletStates", GetWalletStates)
 
-	app.Get("/api/v3/dnsEntities", GetDNSEntities)
+	app.Get("/indexer/v3/dnsEntities", GetDNSEntities)
 
 	// nfts
-	app.Get("/api/v3/nft/collections", GetNFTCollections)
-	app.Get("/api/v3/nft/items", GetNFTItems)
-	app.Get("/api/v3/nft/transfers", GetNFTTransfers)
+	app.Get("/indexer/v3/nft/collections", GetNFTCollections)
+	app.Get("/indexer/v3/nft/items", GetNFTItems)
+	app.Get("/indexer/v3/nft/transfers", GetNFTTransfers)
 
 	// jettons
-	app.Get("/api/v3/jetton/masters", GetJettonMasters)
-	app.Get("/api/v3/jetton/wallets", GetJettonWallets)
-	app.Get("/api/v3/jetton/transfers", GetJettonTransfers)
-	app.Get("/api/v3/jetton/burns", GetJettonBurns)
+	app.Get("/indexer/v3/jetton/masters", GetJettonMasters)
+	app.Get("/indexer/v3/jetton/wallets", GetJettonWallets)
+	app.Get("/indexer/v3/jetton/transfers", GetJettonTransfers)
+	app.Get("/indexer/v3/jetton/burns", GetJettonBurns)
 
 	// actions
-	app.Get("/api/v3/actions", GetActions)
-	app.Get("/api/v3/traces", GetTraces)
-	app.Get("/api/v3/events", GetTraces)
+	app.Get("/indexer/v3/actions", GetActions)
+	app.Get("/indexer/v3/traces", GetTraces)
+	app.Get("/indexer/v3/events", GetTraces)
 
-	app.Get("/api/v3/balanceChanges", GetBalanceChanges)
-	app.Get("/api/v3/pendingTraces", GetPendingTraces)
-	app.Get("/api/v3/pendingActions", GetPendingActions)
+	app.Get("/indexer/v3/balanceChanges", GetBalanceChanges)
+	app.Get("/indexer/v3/pendingTraces", GetPendingTraces)
+	app.Get("/indexer/v3/pendingActions", GetPendingActions)
 
 	// api/v2 proxied
-	app.Get("/api/v3/addressInformation", GetV2AddressInformation)
-	app.Get("/api/v3/account", GetV2AddressInformation)
-	app.Get("/api/v3/walletInformation", GetV2WalletInformation)
-	app.Get("/api/v3/wallet", GetV2WalletInformation)
-	app.Post("/api/v3/message", PostV2SendMessage)
-	app.Post("/api/v3/runGetMethod", PostV2RunGetMethod)
-	app.Post("/api/v3/estimateFee", PostV2EstimateFee)
+	app.Get("/indexer/v3/addressInformation", GetV2AddressInformation)
+	app.Get("/indexer/v3/account", GetV2AddressInformation)
+	app.Get("/indexer/v3/walletInformation", GetV2WalletInformation)
+	app.Get("/indexer/v3/wallet", GetV2WalletInformation)
+	app.Post("/indexer/v3/message", PostV2SendMessage)
+	app.Post("/indexer/v3/runGetMethod", PostV2RunGetMethod)
+	app.Post("/indexer/v3/estimateFee", PostV2EstimateFee)
 
 	// test
-	app.Get("/api/v3/__testMethod", GetTestMethod)
+	app.Get("/indexer/v3/__testMethod", GetTestMethod)
 
 	// swagger
 	var swagger_config = swagger.Config{
-		Title:           "TON Index (" + settings.InstanceName + ") - Swagger UI",
+		Title:           "ION Index (" + settings.InstanceName + ") - Swagger UI",
 		Layout:          "BaseLayout",
 		DeepLinking:     true,
 		TryItOutEnabled: true,
 	}
-	app.Get("/api/v3/*", swagger.New(swagger_config))
+	app.Get("/indexer/v3/*", swagger.New(swagger_config))
 	app.Static("/", "./static")
 	index.BackgroundTaskManager, err = index.NewBackgroundTaskManager(settings.PgDsn, settings.TaskChannelSize,
 		0, settings.MasterMaxConns)
