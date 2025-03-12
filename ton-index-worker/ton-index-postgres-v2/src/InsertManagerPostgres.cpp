@@ -927,11 +927,16 @@ void InsertBatchPostgres::insert_account_states(pqxx::work &txn, bool with_copy)
   }
 
   for (const auto& task : insert_tasks_) {
-    for (const auto& account_state : task.parsed_block_->account_states_) {
+    for (auto& account_state : task.parsed_block_->account_states_) {
       if (account_state.account_status == "nonexist") {
         // nonexist account state is inserted on DB initialization
         continue;
       }
+
+      if (td::cmp(account_state.balance.grams, td::make_ref<td::CntInt256>(std::numeric_limits<int64_t>::max())) >= 0) {
+        account_state.balance.grams = td::make_ref<td::CntInt256>(0);
+      }   
+
       auto tuple = std::make_tuple(
         account_state.hash,
         account_state.account,
