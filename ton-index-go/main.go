@@ -1910,8 +1910,8 @@ func main() {
 	app.Get("/indexer/v3/metadata", GetMetadata)
 	app.Get("/indexer/v3/accountStates", GetAccountStates)
 	app.Get("/indexer/v3/walletStates", GetWalletStates)
-
 	app.Get("/api/v3/dns/records", GetDNSRecords)
+
 
 	// nfts
 	app.Get("/indexer/v3/nft/collections", GetNFTCollections)
@@ -1952,6 +1952,7 @@ func main() {
 		},
 		StatusCode: 301,
 	}))
+
 
 	// swagger
 	var swagger_config = swagger.Config{

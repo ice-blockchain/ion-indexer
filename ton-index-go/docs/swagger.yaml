@@ -1475,6 +1475,7 @@ paths:
       summary: Get DNS Records
       tags:
       - dns
+
   /indexer/v3/estimateFee:
     post:
       consumes:
