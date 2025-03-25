@@ -28,4 +28,4 @@ fi
 printenv
 ls -la
 
-/app/event_classifier.py $@
+python3 /app/event_classifier.py $@
