@@ -16,6 +16,15 @@ x-index-api: &index-api
   TON_INDEXER_REDIS_DSN: redis://event-cache:6379
   <<: *index-common
 
+x-index-api-host: &index-api-host
+   TON_INDEXER_API_ROOT_PATH:
+   TON_INDEXER_API_PORT:
+   TON_INDEXER_TON_HTTP_API_ENDPOINT:
+   TON_INDEXER_IS_TESTNET:
+   TON_INDEXER_REDIS_DSN: redis://0.0.0.0:6379
+   POSTGRES_HOST: 0.0.0.0
+   <<: *index-common
+
 x-index-worker: &index-worker
   TON_WORKER_FROM:
   TON_WORKER_DBROOT: /tondb
@@ -50,13 +59,9 @@ services:
     secrets:
       - postgres_password
     command: -prefork -threads ${TON_INDEXER_WORKERS:-1}
-    ports:
-      - target: 8081
-        published: ${TON_INDEXER_API_PORT:-8081}
-    environment: *index-api
+    environment: *index-api-host
     restart: always
-    networks:
-      internal:
+    network_mode: host
 
   index-worker:
     image: toncenter/ton-indexer-worker:${VERSION:-latest}
