@@ -1,5 +1,3 @@
-version: '3.9'
-
 x-indexer-environment: &index-common
   POSTGRES_HOST:
   POSTGRES_PORT:
@@ -26,13 +24,9 @@ services:
       dockerfile: Dockerfile
     secrets:
       - postgres_password
-    command: gunicorn indexer.api.main:app -k uvicorn.workers.UvicornWorker --bind=0.0.0.0:8081 -w ${TON_INDEXER_WORKERS:-1}
-    ports:
-      - target: 8081
-        published: ${TON_INDEXER_API_PORT:-8081}
+    command: gunicorn indexer.api.main:app -k uvicorn.workers.UvicornWorker --bind=0.0.0.0:${TON_INDEXER_API_PORT} -w ${TON_INDEXER_WORKERS:-1}
     environment: *index-api
-    networks:
-      internal:
+    network_mode: host
     depends_on:
       - alembic
     restart: unless-stopped
