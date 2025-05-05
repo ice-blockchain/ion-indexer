@@ -13,6 +13,13 @@ x-index-api: &index-api
   TON_INDEXER_TON_HTTP_API_ENDPOINT:
   <<: *index-common
 
+x-index-api-host: &index-api-host
+  TON_INDEXER_API_ROOT_PATH:
+  TON_INDEXER_API_PORT:
+  TON_INDEXER_TON_HTTP_API_ENDPOINT:
+  POSTGRES_HOST: 0.0.0.0
+  <<: *index-common
+
 x-index-worker: &index-worker
   TON_WORKER_FROM:
   <<: *index-common
@@ -25,7 +32,7 @@ services:
     secrets:
       - postgres_password
     command: gunicorn indexer.api.main:app -k uvicorn.workers.UvicornWorker --bind=0.0.0.0:${TON_INDEXER_API_PORT} -w ${TON_INDEXER_WORKERS:-1}
-    environment: *index-api
+    environment: *index-api-host
     network_mode: host
     depends_on:
       - alembic
