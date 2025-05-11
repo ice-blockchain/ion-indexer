@@ -163,20 +163,6 @@ func buildTransactionsQuery(
 		}
 	}
 
-	// filters
-	excludedAccounts := os.Getenv("TON_ACCOUNT_EXCLUDED")
-	if excludedAccounts != "" {
-		excluded := strings.Split(excludedAccounts, ",")
-		exList := []string{}
-		for _, acc := range excluded {
-			acc = strings.TrimSpace(acc)
-			if acc != "" {
-				exList = append(exList, fmt.Sprintf("T.account != '%s'", acc))
-			}
-		}
-		filter_list = append(filter_list, strings.Join(exList, " and "))
-	}
-
 	order_by_now := false
 	if v := utime_req.StartUtime; v != nil {
 		filter_list = append(filter_list, fmt.Sprintf("T.now >= %d", *v))
@@ -280,6 +266,30 @@ func buildTransactionsQuery(
 	}
 	if by_msg {
 		from_query = " messages as M join transactions as T on M.tx_hash = T.hash and M.tx_lt = T.lt"
+	}
+
+	// filters
+	excludedAccounts := os.Getenv("TON_ACCOUNT_EXCLUDED")
+	log.Println(excludedAccounts)
+	if excludedAccounts != "" {
+		excluded := strings.Split(excludedAccounts, ",")
+		exList := []string{}
+		for _, acc := range excluded {
+			acc = strings.TrimSpace(acc)
+			if acc == "" {
+				continue
+			}
+			if by_msg {
+				// Exclude from both source and destination
+				exList = append(exList, fmt.Sprintf("(M.source != '%s' and M.destination != '%s')", acc, acc))
+			} else {
+				// Exclude from T.account
+				exList = append(exList, fmt.Sprintf("T.account != '%s'", acc))
+			}
+		}
+		if len(exList) > 0 {
+			filter_list = append(filter_list, strings.Join(exList, " and "))
+		}
 	}
 
 	// build query
