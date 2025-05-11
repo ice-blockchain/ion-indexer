@@ -270,7 +270,7 @@ func buildTransactionsQuery(
 
 	// filters
 	excludedAccounts := os.Getenv("TON_ACCOUNT_EXCLUDED")
-	log.Println(excludedAccounts)
+	// log.Println(excludedAccounts)
 	if excludedAccounts != "" {
 		excluded := strings.Split(excludedAccounts, ",")
 		exList := []string{}
@@ -300,7 +300,7 @@ func buildTransactionsQuery(
 	query += filter_query
 	query += orderby_query
 	query += limit_query
-	log.Println(query) // TODO: remove debug
+	// log.Println(query) // TODO: remove debug
 	return query, nil
 }
 
