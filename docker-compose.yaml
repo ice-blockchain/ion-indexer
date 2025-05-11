@@ -53,7 +53,9 @@ services:
     ports:
       - target: 8081
         published: ${TON_INDEXER_API_PORT:-8081}
-    environment: *index-api
+    environment:
+      <<: *index-api
+      TON_ACCOUNT_EXCLUDED: ${TON_ACCOUNT_EXCLUDED}
     restart: always
     networks:
       internal:
@@ -72,6 +74,24 @@ services:
     networks:
       internal:
     command: --working-dir /ton_index_workdir --from ${TON_WORKER_FROM:-1}
+    restart: unless-stopped
+
+  metadata-fetcher:
+    build:
+      context: ton-metadata-fetcher
+      dockerfile: Dockerfile
+    secrets:
+      - postgres_password
+    environment: *index-common
+    entrypoint: ["/bin/sh", "-c"]
+    # TODO: Define the password properly taken from the Docker secret
+    command:
+      - |
+        export POSTGRES_PASSWORD=$(cat /run/secrets/postgres_password) && \
+        ton-metadata-fetcher \
+          --pg="postgresql://$POSTGRES_USER:YOUR_PASSWORD@$POSTGRES_HOST:$POSTGRES_PORT/$POSTGRES_DBNAME"
+    networks:
+      internal:
     restart: unless-stopped
 
   postgres:

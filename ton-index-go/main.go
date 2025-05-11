@@ -676,6 +676,7 @@ func GetWalletStates(c *fiber.Ctx) error {
 // // @param limit query int32 false "Limit number of queried rows. Use with *offset* to batch read." minimum(1) maximum(1000) default(10)
 // // @param offset query int32 false "Skip first N rows. Use with *limit* to batch read." minimum(0) default(0)
 // @router /indexer/v3/dns/records [get]
+
 // @security		APIKeyHeader
 // @security		APIKeyQuery
 func GetDNSRecords(c *fiber.Ctx) error {
@@ -1943,7 +1944,6 @@ func main() {
 
 	// test
 	app.Get("/indexer/v3/__testMethod", GetTestMethod)
-
 	// redirect
 	app.Use(redirect.New(redirect.Config{
 		Rules: map[string]string{
@@ -1951,6 +1951,7 @@ func main() {
 		},
 		StatusCode: 301,
 	}))
+
 
 	// swagger
 	var swagger_config = swagger.Config{
