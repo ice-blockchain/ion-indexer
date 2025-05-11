@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/url"
+	"os"
 	"reflect"
 	"sort"
 	"strings"
@@ -163,6 +164,19 @@ func buildTransactionsQuery(
 	}
 
 	// filters
+	excludedAccounts := os.Getenv("TON_ACCOUNT_EXCLUDED")
+	if excludedAccounts != "" {
+		excluded := strings.Split(excludedAccounts, ",")
+		exList := []string{}
+		for _, acc := range excluded {
+			acc = strings.TrimSpace(acc)
+			if acc != "" {
+				exList = append(exList, fmt.Sprintf("T.account != '%s'", acc))
+			}
+		}
+		filter_list = append(filter_list, strings.Join(exList, " and "))
+	}
+
 	order_by_now := false
 	if v := utime_req.StartUtime; v != nil {
 		filter_list = append(filter_list, fmt.Sprintf("T.now >= %d", *v))
@@ -217,7 +231,7 @@ func buildTransactionsQuery(
 			filter_list = append(filter_list, fmt.Sprintf("T.account in (%s)", vv_str))
 		}
 	}
-	// TODO: implement ExcludeAccount logic
+
 	if v := tx_req.Hash; v != nil {
 		filter_list = append(filter_list, fmt.Sprintf("T.hash = '%s'", *v))
 		orderby_query = ``
@@ -276,7 +290,7 @@ func buildTransactionsQuery(
 	query += filter_query
 	query += orderby_query
 	query += limit_query
-	// log.Println(query) // TODO: remove debug
+	log.Println(query) // TODO: remove debug
 	return query, nil
 }
 
