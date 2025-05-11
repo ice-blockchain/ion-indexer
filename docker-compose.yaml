@@ -50,7 +50,9 @@ services:
     ports:
       - target: 8081
         published: ${TON_INDEXER_API_PORT:-8081}
-    environment: *index-api
+    environment:
+      <<: *index-api
+      TON_ACCOUNT_EXCLUDED: ${TON_ACCOUNT_EXCLUDED}
     restart: always
     networks:
       internal:
