@@ -146,14 +146,10 @@ func buildTransactionsQuery(
 	T.action_tot_msg_size_cells, T.action_tot_msg_size_bits, T.bounce, T.bounce_msg_size_cells, T.bounce_msg_size_bits, 
 	T.bounce_req_fwd_fees, T.bounce_msg_fees, T.bounce_fwd_fees, T.split_info_cur_shard_pfx_len, T.split_info_acc_split_depth, 
 	T.split_info_this_addr, T.split_info_sibling_addr, false as emulated from`
-
-	from_query := ` messages as M join transactions as T on M.tx_hash = T.hash and M.tx_lt = T.lt`
-
+	from_query := ` transactions as T`
 	filter_list := []string{}
 	filter_query := ``
 	orderby_query := ``
-
-	// LIMIT clause
 	limit_query, err := limitQuery(lim_req, settings)
 	if err != nil {
 		return "", err
@@ -217,7 +213,8 @@ func buildTransactionsQuery(
 					vv = append(vv, fmt.Sprintf("'%s'", x))
 				}
 			}
-			filter_list = append(filter_list, fmt.Sprintf("T.account in (%s)", strings.Join(vv, ",")))
+			vv_str := strings.Join(vv, ",")
+			filter_list = append(filter_list, fmt.Sprintf("T.account in (%s)", vv_str))
 		}
 	}
 
@@ -230,11 +227,14 @@ func buildTransactionsQuery(
 		orderby_query = fmt.Sprintf(" order by T.lt, account %s", sort_order)
 	}
 
-	// message filters (always allowed now since join is always present)
+	// transaction by message
+	by_msg := false
 	if v := msg_req.Direction; v != nil {
+		by_msg = true
 		filter_list = append(filter_list, fmt.Sprintf("M.direction = '%s'", *v))
 	}
 	if v := msg_req.MessageHash; v != nil {
+		by_msg = true
 		if len(v) == 1 {
 			filter_list = append(filter_list, fmt.Sprintf("M.msg_hash = '%s'", v[0]))
 		} else if len(v) > 1 {
@@ -244,25 +244,33 @@ func buildTransactionsQuery(
 					vv = append(vv, fmt.Sprintf("'%s'", x))
 				}
 			}
-			filter_list = append(filter_list, fmt.Sprintf("M.msg_hash in (%s)", strings.Join(vv, ",")))
+			vv_str := strings.Join(vv, ",")
+			filter_list = append(filter_list, fmt.Sprintf("M.msg_hash in (%s)", vv_str))
 		}
 	}
 	if v := msg_req.Source; v != nil {
+		by_msg = true
 		filter_list = append(filter_list, fmt.Sprintf("M.source = '%s'", *v))
 	}
 	if v := msg_req.Destination; v != nil {
+		by_msg = true
 		filter_list = append(filter_list, fmt.Sprintf("M.destination = '%s'", *v))
 	}
 	if v := msg_req.BodyHash; v != nil {
+		by_msg = true
 		filter_list = append(filter_list, fmt.Sprintf("M.body_hash = '%s'", *v))
 	}
 	if v := msg_req.Opcode; v != nil {
+		by_msg = true
 		filter_list = append(filter_list, fmt.Sprintf("M.opcode = %d and M.direction = 'in'", *v))
 	}
+	if by_msg {
+		from_query = " messages as M join transactions as T on M.tx_hash = T.hash and M.tx_lt = T.lt"
+	}
 
-	// Excluded accounts (uses M + T, so join must always exist)
+	// filters
 	excludedAccounts := os.Getenv("TON_ACCOUNT_EXCLUDED")
-	log.Println(excludedAccounts)
+	// log.Println(excludedAccounts)
 	if excludedAccounts != "" {
 		excluded := strings.Split(excludedAccounts, ",")
 		exList := []string{}
@@ -271,24 +279,28 @@ func buildTransactionsQuery(
 			if acc == "" {
 				continue
 			}
-			exList = append(exList, fmt.Sprintf("(T.account != '%s' and M.source != '%s' and M.destination != '%s')", acc, acc, acc))
+			if by_msg {
+				// Exclude from both source and destination
+				exList = append(exList, fmt.Sprintf("(M.source != '%s' and M.destination != '%s')", acc, acc))
+			} else {
+				// Exclude from T.account
+				exList = append(exList, fmt.Sprintf("T.account != '%s'", acc))
+			}
 		}
 		if len(exList) > 0 {
 			filter_list = append(filter_list, strings.Join(exList, " and "))
 		}
 	}
 
-	// Final query
+	// build query
 	if len(filter_list) > 0 {
 		filter_query = ` where ` + strings.Join(filter_list, " and ")
 	}
-
 	query += from_query
 	query += filter_query
 	query += orderby_query
 	query += limit_query
-
-	//log.Println(query) // Debug — remove in production
+	// log.Println(query) // TODO: remove debug
 	return query, nil
 }
 
