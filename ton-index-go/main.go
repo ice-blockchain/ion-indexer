@@ -269,6 +269,8 @@ func GetTransactions(c *fiber.Ctx) error {
 	// 	return index.IndexError{Code: 404, Message: "transactions not found"}
 	// }
 
+	txs = FilterTransactions(txs)
+
 	txs_resp := index.TransactionsResponse{Transactions: txs, AddressBook: book}
 	return c.JSON(txs_resp)
 }
@@ -388,6 +390,7 @@ func GetTransactionsByMasterchainBlock(c *fiber.Ctx) error {
 	// 	return index.IndexError{Code: 404, Message: "transactions not found"}
 	// }
 
+	txs = FilterTransactions(txs)
 	txs_resp := index.TransactionsResponse{Transactions: txs, AddressBook: book}
 	return c.JSON(txs_resp)
 }
@@ -438,6 +441,7 @@ func GetTransactionsByMessage(c *fiber.Ctx) error {
 	// 	return index.IndexError{Code: 404, Message: "transactions not found"}
 	// }
 
+	txs = FilterTransactions(txs)
 	txs_resp := index.TransactionsResponse{Transactions: txs, AddressBook: book}
 	return c.JSON(txs_resp)
 }
@@ -1801,6 +1805,58 @@ func ContextByTraces(repository *emulated.EmulatedTracesRepository, trace_ids []
 	return emulated_context, err
 }
 
+func FilterTransactions(txs []index.Transaction) []index.Transaction {
+	excluded := GetExcludedAccounts()
+	excludedMap := make(map[string]struct{}, len(excluded))
+	for _, acc := range excluded {
+		acc = strings.TrimSpace(acc)
+		if acc != "" {
+			excludedMap[acc] = struct{}{}
+		}
+	}
+
+	filtered := make([]index.Transaction, 0, len(txs))
+	for _, t := range txs {
+		if _, skip := excludedMap[string(t.Account)]; skip {
+			continue
+		}
+		if t.InMsg != nil && t.InMsg.Source != nil {
+			if _, skip := excludedMap[string(*t.InMsg.Source)]; skip {
+				continue
+			}
+		}
+		skip := false
+		for _, m := range t.OutMsgs {
+			if m.Destination != nil {
+				if _, found := excludedMap[string(*m.Destination)]; found {
+					skip = true
+					break
+				}
+			}
+		}
+		if !skip {
+			filtered = append(filtered, t)
+		}
+	}
+	return filtered
+}
+
+func GetExcludedAccounts() []string {
+	env := os.Getenv("TON_ACCOUNT_EXCLUDED")
+	if env == "" {
+		return nil
+	}
+	parts := strings.Split(env, ",")
+	result := make([]string, 0, len(parts))
+	for _, acc := range parts {
+		acc = strings.TrimSpace(acc)
+		if acc != "" {
+			result = append(result, acc)
+		}
+	}
+	return result
+}
+
 func test() {
 	// addr_str := "0QAvlUF6KtTT7R9/kmxOPULEMd+zbtVBZigkorOlGqWtzVky"
 	// addr, err := address.ParseAddr(addr_str)
@@ -1951,7 +2007,6 @@ func main() {
 		},
 		StatusCode: 301,
 	}))
-
 
 	// swagger
 	var swagger_config = swagger.Config{
