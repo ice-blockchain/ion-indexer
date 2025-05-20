@@ -1842,7 +1842,6 @@ func FilterTransactions(txs []index.Transaction) []index.Transaction {
 	}
 	return filtered
 }
-
 func FilterActions(actions []index.Action) []index.Action {
 	excluded := GetExcludedAccounts()
 	excludedMap := make(map[string]struct{}, len(excluded))
@@ -1857,35 +1856,27 @@ func FilterActions(actions []index.Action) []index.Action {
 	filtered := make([]index.Action, 0, len(actions))
 	for _, a := range actions {
 		var src, dst string
-
 		log.Printf("[FilterActions] Processing action_id: %s, type: %s", a.ActionId, a.Type)
 
-		detailsMap, ok := a.Details.(map[string]interface{})
-		if !ok {
-			log.Printf("[FilterActions] Skipping: Details is not map[string]interface{} (got: %T)", a.Details)
-			filtered = append(filtered, a)
-			continue
-		}
-
-		if srcRaw, ok := detailsMap["source"]; ok {
-			if s, ok := srcRaw.(string); ok {
-				src = strings.TrimSpace(s)
+		switch d := a.Details.(type) {
+		case *index.ActionDetailsTonTransfer:
+			if d.Source != nil {
+				src = strings.TrimSpace(string(*d.Source))
 			}
-		}
-		if dstRaw, ok := detailsMap["destination"]; ok {
-			if d, ok := dstRaw.(string); ok {
-				dst = strings.TrimSpace(d)
+			if d.Destination != nil {
+				dst = strings.TrimSpace(string(*d.Destination))
 			}
+			log.Printf("[FilterActions] Parsed TonTransfer src: %q, dst: %q", src, dst)
+		default:
+			log.Printf("[FilterActions] Unknown Details type: %T", d)
 		}
-
-		log.Printf("[FilterActions] Extracted source: %q, destination: %q", src, dst)
 
 		if _, found := excludedMap[src]; found {
-			log.Printf("[FilterActions] Excluding action %s due to source: %s", a.ActionId, src)
+			log.Printf("[FilterActions] Skipping due to source match: %s", src)
 			continue
 		}
 		if _, found := excludedMap[dst]; found {
-			log.Printf("[FilterActions] Excluding action %s due to destination: %s", a.ActionId, dst)
+			log.Printf("[FilterActions] Skipping due to destination match: %s", dst)
 			continue
 		}
 
