@@ -1294,6 +1294,8 @@ func GetActions(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
+
+	res = FilterActions(res)
 	// if len(res) == 0 {
 	// 	return index.IndexError{Code: 404, Message: "actions not found"}
 	// }
