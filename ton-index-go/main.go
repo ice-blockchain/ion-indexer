@@ -1841,6 +1841,49 @@ func FilterTransactions(txs []index.Transaction) []index.Transaction {
 	return filtered
 }
 
+func FilterActions(actions []index.Action) []index.Action {
+	excluded := GetExcludedAccounts()
+	excludedMap := make(map[string]struct{}, len(excluded))
+	for _, acc := range excluded {
+		acc = strings.TrimSpace(acc)
+		if acc != "" {
+			excludedMap[acc] = struct{}{}
+		}
+	}
+
+	filtered := make([]index.Action, 0, len(actions))
+	for _, a := range actions {
+		detailsMap, ok := a.Details.(map[string]interface{})
+		if !ok {
+			// If we can't parse details, assume it's not excluded
+			filtered = append(filtered, a)
+			continue
+		}
+
+		// Check source
+		if srcRaw, ok := detailsMap["source"]; ok {
+			if srcStr, ok := srcRaw.(string); ok {
+				if _, skip := excludedMap[strings.TrimSpace(srcStr)]; skip {
+					continue
+				}
+			}
+		}
+
+		// Check destination
+		if dstRaw, ok := detailsMap["destination"]; ok {
+			if dstStr, ok := dstRaw.(string); ok {
+				if _, skip := excludedMap[strings.TrimSpace(dstStr)]; skip {
+					continue
+				}
+			}
+		}
+
+		filtered = append(filtered, a)
+	}
+
+	return filtered
+}
+
 func GetExcludedAccounts() []string {
 	env := os.Getenv("TON_ACCOUNT_EXCLUDED")
 	if env == "" {
