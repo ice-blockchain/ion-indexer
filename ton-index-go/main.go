@@ -1842,10 +1842,6 @@ func FilterTransactions(txs []index.Transaction) []index.Transaction {
 	}
 	return filtered
 }
-import (
-	"log"
-	"strings"
-)
 
 func FilterActions(actions []index.Action) []index.Action {
 	excluded := GetExcludedAccounts()
@@ -1905,7 +1901,6 @@ func FilterActions(actions []index.Action) []index.Action {
 	log.Printf("[FilterActions] Filtered result count: %d out of %d", len(filtered), len(actions))
 	return filtered
 }
-
 
 func GetExcludedAccounts() []string {
 	env := os.Getenv("TON_ACCOUNT_EXCLUDED")
