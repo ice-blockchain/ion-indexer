@@ -1842,6 +1842,10 @@ func FilterTransactions(txs []index.Transaction) []index.Transaction {
 	}
 	return filtered
 }
+import (
+	"log"
+	"strings"
+)
 
 func FilterActions(actions []index.Action) []index.Action {
 	excluded := GetExcludedAccounts()
@@ -1852,39 +1856,56 @@ func FilterActions(actions []index.Action) []index.Action {
 			excludedMap[acc] = struct{}{}
 		}
 	}
+	log.Printf("[FilterActions] Excluded accounts: %v", excluded)
 
 	filtered := make([]index.Action, 0, len(actions))
 	for _, a := range actions {
-		detailsMap, ok := a.Details.(map[string]interface{})
-		if !ok {
-			// If we can't parse details, assume it's not excluded
-			filtered = append(filtered, a)
+		var src, dst string
+
+		log.Printf("[FilterActions] Processing action_id: %s, type: %s", a.ActionId, a.Type)
+
+		// Try map[string]interface{}
+		if detailsMap, ok := a.Details.(map[string]interface{}); ok {
+			log.Printf("[FilterActions] Details is map[string]interface{}")
+
+			if srcRaw, ok := detailsMap["source"]; ok {
+				if s, ok := srcRaw.(string); ok {
+					src = strings.TrimSpace(s)
+				}
+			}
+			if dstRaw, ok := detailsMap["destination"]; ok {
+				if d, ok := dstRaw.(string); ok {
+					dst = strings.TrimSpace(d)
+				}
+			}
+		} else {
+			log.Printf("[FilterActions] Details is NOT map[string]interface{} (type = %T)", a.Details)
+
+			// Example: try handling typed struct (TransferDetails)
+			if td, ok := a.Details.(*index.TransferDetails); ok {
+				log.Printf("[FilterActions] Details is *index.TransferDetails")
+				src = strings.TrimSpace(td.Source)
+				dst = strings.TrimSpace(td.Destination)
+			}
+		}
+
+		log.Printf("[FilterActions] Extracted source: %q, destination: %q", src, dst)
+
+		if _, found := excludedMap[src]; found {
+			log.Printf("[FilterActions] Excluding due to source match: %q", src)
 			continue
 		}
-
-		// Check source
-		if srcRaw, ok := detailsMap["source"]; ok {
-			if srcStr, ok := srcRaw.(string); ok {
-				if _, skip := excludedMap[strings.TrimSpace(srcStr)]; skip {
-					continue
-				}
-			}
-		}
-
-		// Check destination
-		if dstRaw, ok := detailsMap["destination"]; ok {
-			if dstStr, ok := dstRaw.(string); ok {
-				if _, skip := excludedMap[strings.TrimSpace(dstStr)]; skip {
-					continue
-				}
-			}
+		if _, found := excludedMap[dst]; found {
+			log.Printf("[FilterActions] Excluding due to destination match: %q", dst)
+			continue
 		}
 
 		filtered = append(filtered, a)
 	}
-
+	log.Printf("[FilterActions] Filtered result count: %d out of %d", len(filtered), len(actions))
 	return filtered
 }
+
 
 func GetExcludedAccounts() []string {
 	env := os.Getenv("TON_ACCOUNT_EXCLUDED")
