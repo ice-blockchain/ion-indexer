@@ -1860,45 +1860,38 @@ func FilterActions(actions []index.Action) []index.Action {
 
 		log.Printf("[FilterActions] Processing action_id: %s, type: %s", a.ActionId, a.Type)
 
-		// Try map[string]interface{}
-		if detailsMap, ok := a.Details.(map[string]interface{}); ok {
-			log.Printf("[FilterActions] Details is map[string]interface{}")
+		detailsMap, ok := a.Details.(map[string]interface{})
+		if !ok {
+			log.Printf("[FilterActions] Skipping: Details is not map[string]interface{} (got: %T)", a.Details)
+			filtered = append(filtered, a)
+			continue
+		}
 
-			if srcRaw, ok := detailsMap["source"]; ok {
-				if s, ok := srcRaw.(string); ok {
-					src = strings.TrimSpace(s)
-				}
+		if srcRaw, ok := detailsMap["source"]; ok {
+			if s, ok := srcRaw.(string); ok {
+				src = strings.TrimSpace(s)
 			}
-			if dstRaw, ok := detailsMap["destination"]; ok {
-				if d, ok := dstRaw.(string); ok {
-					dst = strings.TrimSpace(d)
-				}
-			}
-		} else {
-			log.Printf("[FilterActions] Details is NOT map[string]interface{} (type = %T)", a.Details)
-
-			// Example: try handling typed struct (TransferDetails)
-			if td, ok := a.Details.(*index.TransferDetails); ok {
-				log.Printf("[FilterActions] Details is *index.TransferDetails")
-				src = strings.TrimSpace(td.Source)
-				dst = strings.TrimSpace(td.Destination)
+		}
+		if dstRaw, ok := detailsMap["destination"]; ok {
+			if d, ok := dstRaw.(string); ok {
+				dst = strings.TrimSpace(d)
 			}
 		}
 
 		log.Printf("[FilterActions] Extracted source: %q, destination: %q", src, dst)
 
 		if _, found := excludedMap[src]; found {
-			log.Printf("[FilterActions] Excluding due to source match: %q", src)
+			log.Printf("[FilterActions] Excluding action %s due to source: %s", a.ActionId, src)
 			continue
 		}
 		if _, found := excludedMap[dst]; found {
-			log.Printf("[FilterActions] Excluding due to destination match: %q", dst)
+			log.Printf("[FilterActions] Excluding action %s due to destination: %s", a.ActionId, dst)
 			continue
 		}
 
 		filtered = append(filtered, a)
 	}
-	log.Printf("[FilterActions] Filtered result count: %d out of %d", len(filtered), len(actions))
+	log.Printf("[FilterActions] Filtered down to %d from %d actions", len(filtered), len(actions))
 	return filtered
 }
 
