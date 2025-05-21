@@ -1294,6 +1294,8 @@ func GetActions(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
+
+	res = FilterActions(res)
 	// if len(res) == 0 {
 	// 	return index.IndexError{Code: 404, Message: "actions not found"}
 	// }
@@ -1837,6 +1839,43 @@ func FilterTransactions(txs []index.Transaction) []index.Transaction {
 		if !skip {
 			filtered = append(filtered, t)
 		}
+	}
+	return filtered
+}
+func FilterActions(actions []index.Action) []index.Action {
+	excluded := GetExcludedAccounts()
+	excludedMap := make(map[string]struct{}, len(excluded))
+	for _, acc := range excluded {
+		acc = strings.TrimSpace(acc)
+		if acc != "" {
+			excludedMap[acc] = struct{}{}
+		}
+	}
+
+	filtered := make([]index.Action, 0, len(actions))
+	for _, a := range actions {
+		var src, dst string
+
+		switch d := a.Details.(type) {
+		case *index.ActionDetailsTonTransfer:
+			if d.Source != nil {
+				src = strings.TrimSpace(string(*d.Source))
+			}
+			if d.Destination != nil {
+				dst = strings.TrimSpace(string(*d.Destination))
+			}
+		default:
+			log.Printf("[FilterActions] Unknown Details type: %T", d)
+		}
+
+		if _, found := excludedMap[src]; found {
+			continue
+		}
+		if _, found := excludedMap[dst]; found {
+			continue
+		}
+
+		filtered = append(filtered, a)
 	}
 	return filtered
 }
