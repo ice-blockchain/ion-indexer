@@ -1851,12 +1851,10 @@ func FilterActions(actions []index.Action) []index.Action {
 			excludedMap[acc] = struct{}{}
 		}
 	}
-	log.Printf("[FilterActions] Excluded accounts: %v", excluded)
 
 	filtered := make([]index.Action, 0, len(actions))
 	for _, a := range actions {
 		var src, dst string
-		log.Printf("[FilterActions] Processing action_id: %s, type: %s", a.ActionId, a.Type)
 
 		switch d := a.Details.(type) {
 		case *index.ActionDetailsTonTransfer:
@@ -1866,23 +1864,19 @@ func FilterActions(actions []index.Action) []index.Action {
 			if d.Destination != nil {
 				dst = strings.TrimSpace(string(*d.Destination))
 			}
-			log.Printf("[FilterActions] Parsed TonTransfer src: %q, dst: %q", src, dst)
 		default:
 			log.Printf("[FilterActions] Unknown Details type: %T", d)
 		}
 
 		if _, found := excludedMap[src]; found {
-			log.Printf("[FilterActions] Skipping due to source match: %s", src)
 			continue
 		}
 		if _, found := excludedMap[dst]; found {
-			log.Printf("[FilterActions] Skipping due to destination match: %s", dst)
 			continue
 		}
 
 		filtered = append(filtered, a)
 	}
-	log.Printf("[FilterActions] Filtered down to %d from %d actions", len(filtered), len(actions))
 	return filtered
 }
 
