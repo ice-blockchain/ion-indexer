@@ -889,6 +889,9 @@ func GetTopAccountsByBalance(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
+
+	res = FilterAccountBalances(res)
+
 	return c.JSON(res)
 }
 
@@ -1876,6 +1879,27 @@ func FilterActions(actions []index.Action) []index.Action {
 		}
 
 		filtered = append(filtered, a)
+	}
+	return filtered
+}
+
+func FilterAccountBalances(balances []index.AccountBalance) []index.AccountBalance {
+	excluded := GetExcludedAccounts()
+	excludedMap := make(map[string]struct{}, len(excluded))
+	for _, acc := range excluded {
+		acc = strings.TrimSpace(acc)
+		if acc != "" {
+			excludedMap[acc] = struct{}{}
+		}
+	}
+
+	filtered := make([]index.AccountBalance, 0, len(balances))
+	for _, b := range balances {
+		acc := strings.TrimSpace(string(b.Account))
+		if _, found := excludedMap[acc]; found {
+			continue
+		}
+		filtered = append(filtered, b)
 	}
 	return filtered
 }
