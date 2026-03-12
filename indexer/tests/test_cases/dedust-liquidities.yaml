@@ -238,7 +238,7 @@ cases:
             target_amount_2: 8364000000000
             target_asset_1: null
             target_amount_1: 100000000000
-  Final deposit with ton excesses:
+  Final deposit with ion excesses:
     trace-id: BD_4YMGJ9vOn8-2PFwxAj_vwi_UcrYRD61OXsHMHSb8=
     expected-actions:
       - type: dex_deposit_liquidity
@@ -284,7 +284,7 @@ cases:
             - ISnMaB+v+KJgjvuPm9ub57aL8fpHu9FgcMb/s8Jg2zc=
             - 6KB6Z8cM+uGLkIVQoUlG4MAn40V5BK+PB40y8SazZ3g=
             - jtsl8IzaczgWMTjO9z6W7hMF0OvVItzo2ErCqvVoJ68=
-  Merged with ton excesses:
+  Merged with ion excesses:
     trace-id: k0yADcY39ZkSu5Y7keHvfMzFyadhlDZ1OvxH-c8aU7M=
     expected-actions:
       - type: dex_deposit_liquidity

@@ -15,10 +15,10 @@ all:
     master-01:
       ansible_host: 192.168.69.1
   children:
-    ton_index__master_nodes:
+    ion_index__master_nodes:
       hosts:
         master-01:
-    ton_index__replica_nodes:
+    ion_index__replica_nodes:
       hosts:
         ubuntu-01:
           pg_master: master-01.example.com:5432
@@ -26,11 +26,11 @@ all:
           pg_master: master-01.example.com:5432
         ubuntu-03:
           pg_master: master-01.example.com:5432
-    ton_index__emulation:
+    ion_index__emulation:
       hosts:
         emulation-01:
-    ton_index__pendings:
+    ion_index__pendings:
       hosts:
         pendings-01:
-          host_addr: 1.2.3.4:9876 # public ip of this machine with port to be used for ton-trace-emulator
+          host_addr: 1.2.3.4:9876 # public ip of this machine with port to be used for ion-trace-emulator
         

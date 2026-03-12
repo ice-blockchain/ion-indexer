@@ -55,13 +55,13 @@
         go_version: "1.24.7"
         go_checksum: "da18191ddb7db8a9339816f3e2b54bdded8047cdc2a5d67059478f8d1595c43f"
 
-- name: Build ton-indexer binaries
+- name: Build ion-indexer binaries
   hosts: builder
   tasks:
     - name: Create temp workspace
       ansible.builtin.tempfile:
         state: directory
-        suffix: ton-indexer
+        suffix: ion-indexer
       register: builddir
 
     - block:
@@ -75,7 +75,7 @@
             recursive: yes
             delete: no
 
-        - name: Build ton-emulate-go and ton-trace-task-emulator
+        - name: Build ion-emulate-go and ion-trace-task-emulator
           ansible.builtin.shell: |
             set -e
             cmake -DCMAKE_BUILD_TYPE=Release \
@@ -85,7 +85,7 @@
                   -DCMAKE_CXX_COMPILER_LAUNCHER=ccache 
             cmake --build "{{ builddir.path }}/build" \
                   --parallel {{ ansible_facts.processor_vcpus | default(2) }} \
-                  --target ton-emulate-go ton-trace-task-emulator
+                  --target ion-emulate-go ion-trace-task-emulator
           args:
             chdir: "{{ builddir.path }}"
           environment:
@@ -102,9 +102,9 @@
             dest: "artifacts/"
             flat: true
           loop:
-            - "ton-emulate-go/ton-emulate-go"
-            - "ton-index-worker/ton-marker/libton-marker.so"
-            - "ton-index-worker/ton-trace-task-emulator/ton-trace-task-emulator"
+            - "ion-emulate-go/ion-emulate-go"
+            - "ion-index-worker/ion-marker/libion-marker.so"
+            - "ion-index-worker/ion-trace-task-emulator/ion-trace-task-emulator"
       always:
         - name: Cleanup workspace
           ansible.builtin.file:
@@ -142,15 +142,15 @@
         dest: "{{ item.dest }}"
         mode: "0777"
       with_items:
-        - src: "artifacts/ton-emulate-go"
+        - src: "artifacts/ion-emulate-go"
           dest: "{{ deploy_path }}/{{ stack_name }}__emulate_api"
-        - src: "artifacts/ton-trace-task-emulator"
+        - src: "artifacts/ion-trace-task-emulator"
           dest: "{{ deploy_path }}/{{ stack_name }}__trace_task_emulator"
 
-    - name: Install libton-marker.so
+    - name: Install libion-marker.so
       ansible.builtin.copy:
-        src: "artifacts/libton-marker.so"
-        dest: "/usr/lib/libton-marker.so"
+        src: "artifacts/libion-marker.so"
+        dest: "/usr/lib/libion-marker.so"
         mode: "0644"
 
     - name: Refresh linker cache

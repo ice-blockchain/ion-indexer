@@ -14,7 +14,7 @@ class JettonTransfer:
     comment: bytes | None
     encrypted_comment: bool
     forward_payload: bytes | None
-    stonfi_swap_body: dict | None
+    iondex_swap_body: dict | None
 
     def __init__(self, boc: Slice):
         boc.load_uint(32)  # opcode
@@ -31,7 +31,7 @@ class JettonTransfer:
         self.comment = None
         self.encrypted_comment = False
         self.payload_sum_type = None
-        self.stonfi_swap_body = None
+        self.iondex_swap_body = None
         if boc.remaining_bits > 0:
             payload_slice = boc.load_ref().to_slice() if boc.load_bool() else boc.copy()
             self._load_forward_payload(payload_slice)
@@ -59,7 +59,7 @@ class JettonTransfer:
                 self.comment = payload_slice.load_snake_bytes()
                 self.encrypted_comment = True
             elif sum_type == 0x25938561:
-                self.stonfi_swap_body = {
+                self.iondex_swap_body = {
                     'jetton_wallet': payload_slice.load_address(),
                     'min_amount': payload_slice.load_coins(),
                     'user_address': payload_slice.load_address()
@@ -95,7 +95,7 @@ class JettonInternalTransfer:
     amount: int
     from_address: Address
     response_address: Address
-    forward_ton_amount: int
+    forward_ion_amount: int
 
     def __init__(self, slice: Slice):
         slice.load_uint(32)
@@ -103,7 +103,7 @@ class JettonInternalTransfer:
         self.amount = slice.load_coins()
         self.from_address = slice.load_address()
         self.response_address = slice.load_address()
-        self.forward_ton_amount = slice.load_coins()
+        self.forward_ion_amount = slice.load_coins()
 
 
 class JettonNotify:
@@ -136,7 +136,7 @@ class JettonNotify:
 # mint#642b7d07
 # query_id:uint64
 # to_address:MsgAddressInt
-# ton_amount:Coins
+# ion_amount:Coins
 # <!--        master_msg:^JettonInternalTransfer-->
 # = InternalMsgBody;
 class JettonMint:
@@ -144,19 +144,19 @@ class JettonMint:
 
     query_id: int
     to_address: Address
-    ton_amount: int
+    ion_amount: int
 
     def __init__(self, slice: Slice):
         slice.load_uint(32)
         self.query_id = slice.load_uint(64)
         self.to_address = slice.load_address()
-        self.ton_amount = slice.load_coins()
+        self.ion_amount = slice.load_coins()
 
 class MinterJettonMint:
     opcode = 0x00000015
     query_id: int
     to_address: Address
-    ton_amount: int
+    ion_amount: int
     master_msg: Cell
     master_msg_query_id: int
     master_msg_jetton_amount: int
@@ -165,7 +165,7 @@ class MinterJettonMint:
         slice.load_uint(32)  # Skip op
         self.query_id = slice.load_uint(64)
         self.to_address = slice.load_address()
-        self.ton_amount = slice.load_coins()
+        self.ion_amount = slice.load_coins()
         self.master_msg = slice.load_ref()
         master_msg_slice = self.master_msg.to_slice()
         master_msg_slice.load_uint(32)  # Skip op

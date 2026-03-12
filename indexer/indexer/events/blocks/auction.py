@@ -145,7 +145,7 @@ class AuctionOutbidMatcher(BlockMatcher):
             for b in block.next_blocks:
                 if (isinstance(b, TonTransferBlock) and block.data['auction'] == b.get_message().source
                         and "Your bid has been outbid by another user" in b.comment):
-                    if outbid_transfer is not None: # To avoid false positives only one ton transfer allowed
+                    if outbid_transfer is not None: # To avoid false positives only one ion transfer allowed
                         return []
                     outbid_transfer = b
 
@@ -169,7 +169,7 @@ class AuctionOutbidMatcher(BlockMatcher):
             for b in block.next_blocks:
                 if (isinstance(b, CallContractBlock) and block.data['auction'] == b.get_message().source
                         and b.opcode == 0x557cea20):
-                    if outbid_transfer is not None:  # To avoid false positives only one ton transfer allowed
+                    if outbid_transfer is not None:  # To avoid false positives only one ion transfer allowed
                         return []
                     outbid_transfer = b
             if outbid_transfer is None:
@@ -235,7 +235,7 @@ class NftPutOnAuctionBlock(Block):
 class NftPutOnSaleBlockMatcher(BlockMatcher):
     def __init__(self):
         sale_init = GenericMatcher(test_self_func=lambda b:
-            b.btype in ['ton_transfer', 'call_contract'] and len(b.contract_deployments) > 0)
+            b.btype in ['ion_transfer', 'call_contract'] and len(b.contract_deployments) > 0)
         super().__init__(children_matchers=[
             labeled('sale_init', sale_init),
             labeled('transfer_to_sale', BlockTypeMatcher('nft_transfer'))

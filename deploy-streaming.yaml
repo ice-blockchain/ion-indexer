@@ -57,14 +57,14 @@
         go_checksum: "da18191ddb7db8a9339816f3e2b54bdded8047cdc2a5d67059478f8d1595c43f"
 
 
-- name: Build ton-indexer binaries
+- name: Build ion-indexer binaries
   hosts: builder
   gather_facts: true
   tasks:
     - name: Create temp workspace
       ansible.builtin.tempfile:
         state: directory
-        suffix: ton-indexer
+        suffix: ion-indexer
       register: builddir
 
     - block:
@@ -78,7 +78,7 @@
             recursive: yes
             delete: no
 
-        - name: Build ton-streaming-go binary
+        - name: Build ion-streaming-go binary
           ansible.builtin.shell: |
             set -e
             cmake -DCMAKE_BUILD_TYPE=Release \
@@ -88,7 +88,7 @@
                   -DCMAKE_CXX_COMPILER_LAUNCHER=ccache 
             cmake --build "{{ builddir.path }}/build" \
                   --parallel {{ ansible_facts.processor_vcpus | default(2) }} \
-                  --target ton-streaming-go
+                  --target ion-streaming-go
           args:
             chdir: "{{ builddir.path }}"
           environment:
@@ -105,8 +105,8 @@
             dest: "artifacts/"
             flat: true
           loop:
-            - "ton-streaming-go/ton-streaming-go"
-            - "ton-index-worker/ton-marker/libton-marker.so"
+            - "ion-streaming-go/ion-streaming-go"
+            - "ion-index-worker/ion-marker/libion-marker.so"
       always:
         - name: Cleanup workspace
           ansible.builtin.file:
@@ -131,20 +131,20 @@
         mode: "0777"
         force: true
       with_items:
-        - src: "artifacts/ton-streaming-go"
+        - src: "artifacts/ion-streaming-go"
           dest: "{{ deploy_path }}/{{ stack_name }}__streaming_api"
       
-    - name: Install libton-marker.so
+    - name: Install libion-marker.so
       ansible.builtin.copy:
-        src: "artifacts/libton-marker.so"
-        dest: "/usr/lib/libton-marker.so"
+        src: "artifacts/libion-marker.so"
+        dest: "/usr/lib/libion-marker.so"
         mode: "0644"
     
     - name: Refresh linker cache
       ansible.builtin.command: ldconfig
       changed_when: false
 
-    - name: Setup ton-streaming-go service
+    - name: Setup ion-streaming-go service
       ansible.builtin.template:
         src: "ansible/systemd.service.j2"
         dest: "{{ systemd_service_path }}/{{ service_name }}.service"

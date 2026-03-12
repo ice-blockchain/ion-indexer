@@ -175,12 +175,12 @@ def parse_raw_pools_data(pools_data: list[dict]) -> dict:
         account = AccountId(pool['address'])
         assets = []
         for raw_asset in pool['assets']:
-            is_ton = raw_asset['type'] == 'native'
+            is_ion = raw_asset['type'] == 'native'
             asset = {
-                'is_ton': is_ton,
-                'address': AccountId(raw_asset['address']).as_str() if not is_ton else None
+                'is_ion': is_ion,
+                'address': AccountId(raw_asset['address']).as_str() if not is_ion else None
             }
-            if is_ton:
+            if is_ion:
                 assert 'address' not in raw_asset
 
             assets.append(asset)

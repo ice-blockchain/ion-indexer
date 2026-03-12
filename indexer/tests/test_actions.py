@@ -10,20 +10,20 @@ from tests.utils.trace_deserializer import load_trace_from_file
 
 
 class TestTonTransfers(BaseGenericActionTest):
-    yaml_file = "ton-transfers.yaml"
+    yaml_file = "ion-transfers.yaml"
 
 
-class TestStonfiSwaps(BaseGenericActionTest):
-    yaml_file = "stonfi-swaps.yaml"
+class TestIonDexSwaps(BaseGenericActionTest):
+    yaml_file = "iondex-swaps.yaml"
 
-class TestStonfiV2Swaps(BaseGenericActionTest):
-    yaml_file = "stonfi-v2-swaps.yaml"
+class TestIonDexV2Swaps(BaseGenericActionTest):
+    yaml_file = "iondex-v2-swaps.yaml"
 
 class TestJettonMints(BaseGenericActionTest):
     yaml_file = "jetton-mints.yaml"
 
 class TestTonstakersActions(BaseGenericActionTest):
-    yaml_file = "tonstakers.yaml"
+    yaml_file = "ionstakers.yaml"
 
 class TestJvaultActions(BaseGenericActionTest):
     yaml_file = "jvault.yaml"
@@ -41,7 +41,7 @@ class TestDedustLiquiditiesActions(BaseGenericActionTest):
     yaml_file = "dedust-liquidities.yaml"
 
 class TestToncoActions(BaseGenericActionTest):
-    yaml_file = "tonco.yaml"
+    yaml_file = "ionco.yaml"
 
 class TestNftActions(BaseGenericActionTest):
     yaml_file = "nft.yaml"
@@ -99,6 +99,6 @@ class TestClassificationCommon:
         _, state, actions, _ = await process_trace(trace)
         assert state == 'failed'
         assert len(actions) > 0
-        basic_actions = ['ton_transfer', 'call_contract', 'contract_deploy', 'tick_tock']
+        basic_actions = ['ion_transfer', 'call_contract', 'contract_deploy', 'tick_tock']
         for action in actions:
             assert action.type in basic_actions

@@ -29,10 +29,10 @@ from indexer.events.blocks.messages import (
     DedustSwapPeer,
     JettonNotify,
     PTonTransfer,
-    StonfiPaymentRequest,
-    StonfiSwapMessage,
-    StonfiSwapV2,
-    StonfiV2PayTo,
+    IonDexPaymentRequest,
+    IonDexSwapMessage,
+    IonDexSwapV2,
+    IonDexV2PayTo,
     ToncoPoolV3Swap,
     ToncoPoolV3SwapPayload,
     ToncoRouterV3PayTo,
@@ -48,7 +48,7 @@ from indexer.events.blocks.messages.coffee import (
 from indexer.events.blocks.messages.jettons import JettonNotify, JettonTransfer
 from indexer.events.blocks.utils import AccountId, Amount, Asset
 from indexer.events.blocks.utils.address_selectors import (
-    extract_target_wallet_stonfi_v2_swap,
+    extract_target_wallet_iondex_v2_swap,
 )
 from indexer.events.blocks.utils.block_utils import (
     find_call_contract,
@@ -60,14 +60,14 @@ from indexer.events.blocks.utils.block_utils import (
 
 logger = logging.getLogger(__name__)
 
-stonfi_swap_ok_exit_code = 0xc64370e5
-stonfi_swap_ok_ref_exit_code = 0x45078540
-stonfi_swap_no_liq_exit_code = 0x5ffe1295
-stonfi_swap_reserve_err_exit_code = 0x38976e9b
-stonfi_sender_related_exit_codes = [
-    stonfi_swap_reserve_err_exit_code,
-    stonfi_swap_no_liq_exit_code,
-    stonfi_swap_ok_exit_code
+iondex_swap_ok_exit_code = 0xc64370e5
+iondex_swap_ok_ref_exit_code = 0x45078540
+iondex_swap_no_liq_exit_code = 0x5ffe1295
+iondex_swap_reserve_err_exit_code = 0x38976e9b
+iondex_sender_related_exit_codes = [
+    iondex_swap_reserve_err_exit_code,
+    iondex_swap_no_liq_exit_code,
+    iondex_swap_ok_exit_code
 ]
 
 class JettonSwapBlock(Block):
@@ -80,10 +80,10 @@ class JettonSwapBlock(Block):
 
 async def _get_block_data(block, other_blocks):
     swap_call_block = next(x for x in other_blocks if isinstance(x, CallContractBlock) and
-                           x.opcode == StonfiSwapMessage.opcode)
-    swap_message = StonfiSwapMessage(swap_call_block.get_body())
-    payment_requests_messages = [(StonfiPaymentRequest(x.get_body()), x) for x in
-                                 find_call_contracts(other_blocks, StonfiPaymentRequest.opcode)]
+                           x.opcode == IonDexSwapMessage.opcode)
+    swap_message = IonDexSwapMessage(swap_call_block.get_body())
+    payment_requests_messages = [(IonDexPaymentRequest(x.get_body()), x) for x in
+                                 find_call_contracts(other_blocks, IonDexPaymentRequest.opcode)]
     assert len(payment_requests_messages) > 0
     if len(payment_requests_messages) > 2:
         print("Multiple payment requests found ", swap_call_block.event_nodes[0].message.trace_id)
@@ -103,8 +103,8 @@ async def _get_block_data(block, other_blocks):
         else:
             amount = payment_request.amount1_out
             addr = payment_request.token1_out
-        if payment_request.exit_code in stonfi_sender_related_exit_codes:
-            success_swap = (payment_request.exit_code == stonfi_swap_ok_exit_code)
+        if payment_request.exit_code in iondex_sender_related_exit_codes:
+            success_swap = (payment_request.exit_code == iondex_swap_ok_exit_code)
             if out_amt is None:
                 outgoing_jetton_transfer = next(b for b in payment_request_block.next_blocks
                                                 if isinstance(b, JettonTransferBlock))
@@ -117,7 +117,7 @@ async def _get_block_data(block, other_blocks):
                 ref_addr = out_addr
                 out_amt = amount
                 out_addr = addr
-        elif payment_request.exit_code == stonfi_swap_ok_ref_exit_code:
+        elif payment_request.exit_code == iondex_swap_ok_ref_exit_code:
             ref_amt = amount
             ref_addr = addr
             for b in payment_request_block.bfs_iter():
@@ -125,8 +125,8 @@ async def _get_block_data(block, other_blocks):
                     other_blocks.remove(b)
 
     actual_out_addr = out_addr
-    if isinstance(block, JettonTransferBlock) and block.jetton_transfer_message.stonfi_swap_body is not None:
-        out_addr = block.jetton_transfer_message.stonfi_swap_body['jetton_wallet']
+    if isinstance(block, JettonTransferBlock) and block.jetton_transfer_message.iondex_swap_body is not None:
+        out_addr = block.jetton_transfer_message.iondex_swap_body['jetton_wallet']
     out_wallet = await context.interface_repository.get().get_jetton_wallet(out_addr.to_str(False).upper())
     actual_out_wallet = await context.interface_repository.get().get_jetton_wallet(actual_out_addr.to_str(False).upper())
     dex_in_wallet = await context.interface_repository.get().get_jetton_wallet(
@@ -144,7 +144,7 @@ async def _get_block_data(block, other_blocks):
         out_destination_jetton_wallet = outgoing_jetton_transfer.data['receiver_wallet']
 
     incoming_transfer = {
-        'asset': Asset(is_ton=in_jetton is None, jetton_address=in_jetton),
+        'asset': Asset(is_ion=in_jetton is None, jetton_address=in_jetton),
         'amount': Amount(swap_message.amount),
         'source': AccountId(swap_message.from_real_user),
         'source_jetton_wallet': in_source_jetton_wallet,
@@ -153,7 +153,7 @@ async def _get_block_data(block, other_blocks):
     }
 
     outgoing_transfer = {
-        'asset': Asset(is_ton=actual_out_jetton is None, jetton_address=actual_out_jetton),
+        'asset': Asset(is_ion=actual_out_jetton is None, jetton_address=actual_out_jetton),
         'amount': Amount(out_amt),
         'source': outgoing_jetton_transfer.data['sender'],
         'source_jetton_wallet': outgoing_jetton_transfer.data['sender_wallet']
@@ -161,18 +161,18 @@ async def _get_block_data(block, other_blocks):
     if out_destination_jetton_wallet is not None:
         outgoing_transfer['destination_jetton_wallet'] = out_destination_jetton_wallet
         outgoing_transfer['destination'] = outgoing_jetton_transfer.data['receiver']
-    elif in_jetton_transfer.data['stonfi_swap_body'] is not None:
-        outgoing_transfer['destination'] = AccountId(in_jetton_transfer.data['stonfi_swap_body']['user_address'])
+    elif in_jetton_transfer.data['iondex_swap_body'] is not None:
+        outgoing_transfer['destination'] = AccountId(in_jetton_transfer.data['iondex_swap_body']['user_address'])
         outgoing_transfer['destination_jetton_wallet'] = None
     else:
         outgoing_transfer['destination'] = AccountId(swap_message.from_user_address)
         outgoing_transfer['destination_jetton_wallet'] = None
     if out_jetton:
-        target_asset = Asset(is_ton=out_jetton is None, jetton_address=out_jetton)
+        target_asset = Asset(is_ion=out_jetton is None, jetton_address=out_jetton)
     else:
         target_asset = None
     return {
-        'dex': 'stonfi',
+        'dex': 'iondex',
         'sender': AccountId(swap_message.from_real_user),
         'receiver': AccountId(swap_message.from_user_address),
         'dex_incoming_transfer': incoming_transfer,
@@ -186,12 +186,12 @@ async def _get_block_data(block, other_blocks):
     }
 
 
-class StonfiSwapBlockMatcher(BlockMatcher):
+class IonDexSwapBlockMatcher(BlockMatcher):
     def __init__(self):
         super().__init__(parent_matcher=None, optional=False,
                          child_matcher=child_sequence_matcher([
-                             ContractMatcher(opcode=StonfiSwapMessage.opcode),
-                             ContractMatcher(opcode=StonfiPaymentRequest.opcode),
+                             ContractMatcher(opcode=IonDexSwapMessage.opcode),
+                             ContractMatcher(opcode=IonDexPaymentRequest.opcode),
                              BlockTypeMatcher(block_type='jetton_transfer')
                          ]))
 
@@ -230,7 +230,7 @@ class DedustPeerBlockMatcher(BlockMatcher):
         return [wrapper]
 
 
-class StonfiV2SwapBlockMatcher(BlockMatcher):
+class IonDexV2SwapBlockMatcher(BlockMatcher):
     swap_opcode = 0x6664de2a
     pay_to_opcode = 0x657b54f5
     pay_vault_opcode = 0x63381632
@@ -244,41 +244,41 @@ class StonfiV2SwapBlockMatcher(BlockMatcher):
                                                                  child_matcher=payout_matcher,
                                                                  optional=True))
 
-        pton_verified_call_contract= GenericMatcher(
-            self._validate_intermediate_pton_transfer,
+        wion_verified_call_contract= GenericMatcher(
+            self._validate_intermediate_wion_transfer,
             child_matcher=ContractMatcher(JettonNotify.opcode, child_matcher=peer_swap_matcher),
             optional=True
         )
-        intermediate_pton_transfer = GenericMatcher(
+        intermediate_wion_transfer = GenericMatcher(
                 lambda b: b.btype == 'jetton_transfer' and not b.data['has_internal_transfer'],
-                child_matcher=pton_verified_call_contract)
+                child_matcher=wion_verified_call_contract)
         payout_matcher.child_matcher = OrMatcher([
-            labeled('out_transfer', intermediate_pton_transfer),
+            labeled('out_transfer', intermediate_wion_transfer),
             labeled('out_transfer', BlockTypeMatcher(block_type='jetton_transfer',
                                                      child_matcher=peer_swap_matcher,
                                                      optional=True)),
             peer_swap_matcher])
 
-        in_pton_transfer = ContractMatcher(opcode=JettonNotify.opcode,
+        in_wion_transfer = ContractMatcher(opcode=JettonNotify.opcode,
                                            parent_matcher=labeled('in_transfer',
                                                                   ContractMatcher(opcode=0x01f3835d)))
 
         in_transfer = OrMatcher([labeled('in_transfer', BlockTypeMatcher(block_type='jetton_transfer')),
-                                 in_pton_transfer])
+                                 in_wion_transfer])
 
         super().__init__(parent_matcher=in_transfer, optional=False,
                          child_matcher=payout_matcher)
 
-    def _validate_intermediate_pton_transfer(self, block: Block):
+    def _validate_intermediate_wion_transfer(self, block: Block):
         if block.previous_block.data['has_internal_transfer']:
             return False
         if block.previous_block.data['receiver'] != block.get_message().destination:
             return False
         try:
-            pton = PTonTransfer(block.get_body())
-            if pton.forward_payload is None:
+            pion = PTonTransfer(block.get_body())
+            if pion.forward_payload is None:
                 return False
-            opcode = pton.forward_payload.to_slice().load_uint(32)
+            opcode = pion.forward_payload.to_slice().load_uint(32)
             if opcode == self.swap_opcode:
                 return True
             else:
@@ -291,12 +291,12 @@ class StonfiV2SwapBlockMatcher(BlockMatcher):
 
     async def _get_target_asset_from_notification(self, message: Message):
         try:
-            address = next(iter(extract_target_wallet_stonfi_v2_swap(message)), None)
+            address = next(iter(extract_target_wallet_iondex_v2_swap(message)), None)
             if address is None:
                 return None
             jetton_wallet = await context.interface_repository.get().get_jetton_wallet(address)
             if jetton_wallet is not None:
-                return Asset(is_ton=False, jetton_address=jetton_wallet.jetton)
+                return Asset(is_ion=False, jetton_address=jetton_wallet.jetton)
         except Exception:
             return None
 
@@ -320,31 +320,31 @@ class StonfiV2SwapBlockMatcher(BlockMatcher):
         actual_swap_steps = []
         destination_asset = None
         for (swap, pay_to) in peer_swap_blocks:
-            pay_to_msg = StonfiV2PayTo(pay_to.get_body())
+            pay_to_msg = IonDexV2PayTo(pay_to.get_body())
             if pay_to_msg.exit_code != 0xc64370e5:
                 ok = False
 
-            swap_msg = StonfiSwapV2(swap.get_body())
+            swap_msg = IonDexSwapV2(swap.get_body())
             actual_swap_steps.append((swap_msg.token_wallet1, swap.min_lt, pay_to_msg, swap_msg))
         actual_swap_steps.sort(key=lambda x: x[1])
 
         target_pool_account = actual_swap_steps[0][3].get_pool_accounts_recursive()[-1]
         target_pool_wallet = await context.interface_repository.get().get_jetton_wallet(target_pool_account)
         if target_pool_wallet is not None:
-            if target_pool_wallet.jetton in PTonTransferMatcher.pton_masters:
-                destination_asset = Asset(is_ton=True)
+            if target_pool_wallet.jetton in PTonTransferMatcher.wion_masters:
+                destination_asset = Asset(is_ion=True)
             else:
-                destination_asset = Asset(is_ton=False, jetton_address=target_pool_wallet.jetton)
+                destination_asset = Asset(is_ion=False, jetton_address=target_pool_wallet.jetton)
 
         swap_steps = []
         pool_addr_jetton_map = {}
         for wallet in actual_swap_steps:
             jetton = await context.interface_repository.get().get_jetton_wallet(wallet[0].to_str(False).upper())
             if jetton is not None:
-                if jetton.jetton in PTonTransferMatcher.pton_masters:
-                    asset = Asset(is_ton=True)
+                if jetton.jetton in PTonTransferMatcher.wion_masters:
+                    asset = Asset(is_ion=True)
                 else:
-                    asset = Asset(is_ton=False, jetton_address=jetton.jetton)
+                    asset = Asset(is_ion=False, jetton_address=jetton.jetton)
                 pool_addr_jetton_map[wallet[0].to_str(False).upper()] = asset
                 swap_steps.append(asset)
             else:
@@ -357,10 +357,10 @@ class StonfiV2SwapBlockMatcher(BlockMatcher):
         if isinstance(in_transfer, JettonTransferBlock):
             sender = in_transfer.data['sender']
             jetton_address = in_transfer.data['asset'].jetton_address
-            if jetton_address.as_str() in PTonTransferMatcher.pton_masters:
-                asset = Asset(is_ton=True)
+            if jetton_address.as_str() in PTonTransferMatcher.wion_masters:
+                asset = Asset(is_ion=True)
             else:
-                asset = Asset(is_ton=in_transfer.data['asset'].is_ton, jetton_address=jetton_address)
+                asset = Asset(is_ion=in_transfer.data['asset'].is_ion, jetton_address=jetton_address)
             in_transfer_data = {
                 'asset': asset,
                 'amount': in_transfer.data['amount'],
@@ -373,10 +373,10 @@ class StonfiV2SwapBlockMatcher(BlockMatcher):
             message = in_transfer.event_nodes[0].message
             amount = message.value
             if message.opcode == PTonTransfer.opcode:
-                amount = PTonTransfer(in_transfer.get_body()).ton_amount
+                amount = PTonTransfer(in_transfer.get_body()).ion_amount
             sender = AccountId(message.source)
             in_transfer_data = {
-                'asset': Asset(is_ton=True, jetton_address=None),
+                'asset': Asset(is_ion=True, jetton_address=None),
                 'amount': Amount(amount),
                 'source': AccountId(message.source),
                 'source_jetton_wallet': None,
@@ -419,14 +419,14 @@ class StonfiV2SwapBlockMatcher(BlockMatcher):
 
         out_transfer_data = {}
         additional_blocks_to_include = []
-        pton_transfer = next((x for x in out_transfer.next_blocks if isinstance(x, CallContractBlock)
+        wion_transfer = next((x for x in out_transfer.next_blocks if isinstance(x, CallContractBlock)
                               and x.opcode == PTonTransfer.opcode), None)
-        if pton_transfer is None and out_transfer.data['has_internal_transfer']:
+        if wion_transfer is None and out_transfer.data['has_internal_transfer']:
             jetton_address = out_transfer.data['asset'].jetton_address
-            if jetton_address.as_str() in PTonTransferMatcher.pton_masters:
-                asset = Asset(is_ton=True)
+            if jetton_address.as_str() in PTonTransferMatcher.wion_masters:
+                asset = Asset(is_ion=True)
             else:
-                asset = Asset(is_ton=out_transfer.data['asset'].is_ton, jetton_address=jetton_address)
+                asset = Asset(is_ion=out_transfer.data['asset'].is_ion, jetton_address=jetton_address)
             out_transfer_data = {
                 'asset': asset,
                 'amount': out_transfer.data['amount'],
@@ -436,18 +436,18 @@ class StonfiV2SwapBlockMatcher(BlockMatcher):
                 'destination_jetton_wallet': out_transfer.data['receiver_wallet']
             }
         else:
-            additional_blocks_to_include.append(pton_transfer)
-            amount = PTonTransfer(pton_transfer.get_body()).ton_amount
+            additional_blocks_to_include.append(wion_transfer)
+            amount = PTonTransfer(wion_transfer.get_body()).ion_amount
             out_transfer_data = {
-                'asset': Asset(is_ton=True, jetton_address=None),
+                'asset': Asset(is_ion=True, jetton_address=None),
                 'amount': Amount(amount),
                 'source': out_transfer.data['sender'],
                 'source_jetton_wallet': out_transfer.data['sender_wallet'],
-                'destination': AccountId(pton_transfer.get_message().destination),
+                'destination': AccountId(wion_transfer.get_message().destination),
                 'destination_jetton_wallet': None,
             }
         new_block = JettonSwapBlock({
-            'dex': 'stonfi_v2',
+            'dex': 'iondex_v2',
             'source_asset': in_transfer_data['asset'],
             'destination_asset': out_transfer_data['asset'],
             'sender': sender,
@@ -525,11 +525,11 @@ class DedustSwapBlockMatcher(BlockMatcher):
         for step in steps:
             pool_info = await context.interface_repository.get().get_dedust_pool(step)
             for asset in pool_info.assets:
-                if asset['is_ton'] and prev_step.is_ton:
+                if asset['is_ion'] and prev_step.is_ion:
                     continue
-                if not prev_step.is_ton and asset['address'] == prev_step.jetton_address.as_str():
+                if not prev_step.is_ion and asset['address'] == prev_step.jetton_address.as_str():
                     continue
-                prev_step = Asset(asset['is_ton'], asset['address'] if not asset['is_ton'] else None)
+                prev_step = Asset(asset['is_ion'], asset['address'] if not asset['is_ion'] else None)
                 seq.append(prev_step)
                 break
         return seq
@@ -552,12 +552,12 @@ class DedustSwapBlockMatcher(BlockMatcher):
             data = {
                 'in': {
                     'amount': Amount(message.amount_in),
-                    'asset': Asset(is_ton=message.asset_in.is_ton,
+                    'asset': Asset(is_ion=message.asset_in.is_ion,
                                    jetton_address=message.asset_in.jetton_address),
                 },
                 'out': {
                     'amount': Amount(message.amount_out),
-                    'asset': Asset(is_ton=message.asset_out.is_ton,
+                    'asset': Asset(is_ion=message.asset_out.is_ion,
                                    jetton_address=message.asset_out.jetton_address),
                 }
             }
@@ -595,7 +595,7 @@ class DedustSwapBlockMatcher(BlockMatcher):
                 s.load_uint(32 + 64)
                 amount_in = s.load_coins()
                 swap_steps_slice = s
-                asset_in = Asset(is_ton=True)
+                asset_in = Asset(is_ion=True)
 
         # Gather actual values from payout
         payout_from_pool = find_call_contracts(other_blocks, DedustPayoutFromPool.opcode)
@@ -620,11 +620,11 @@ class DedustSwapBlockMatcher(BlockMatcher):
                     payout = payout_block
                     dex_outgoing_wallet = AccountId(payout.get_message().source)
                     receiver = AccountId(payout.get_message().destination)
-                    actual_asset_out = Asset(is_ton=True)
+                    actual_asset_out = Asset(is_ion=True)
 
         # Find desired out asset
         steps = self._parse_steps(swap_steps_slice)
-        swap_sequence = await self._get_jetton_swap_sequence(steps, Asset(is_ton=True) if asset_in is None else asset_in)
+        swap_sequence = await self._get_jetton_swap_sequence(steps, Asset(is_ion=True) if asset_in is None else asset_in)
         asset_out = swap_sequence[-1]
 
         # Fill peer swaps with actual values if there is no any successful swap
@@ -687,26 +687,26 @@ class DedustSwapBlockMatcher(BlockMatcher):
 class ToncoSwapBlockMatcher(BlockMatcher):
     swap_opcode = ToncoPoolV3Swap.opcode
     pay_to_opcode = ToncoRouterV3PayTo.opcode
-    pton_incoming_transfer_opcode = 0x01F3835D
+    wion_incoming_transfer_opcode = 0x01F3835D
 
     def __init__(self):
-        # almost the same as StonfiV2SwapBlockMatcher, but
+        # almost the same as IonDexV2SwapBlockMatcher, but
         # - using Tonco opcodes
         # - multihops are like literally one swap after another,
         #   so router sends tokens to itself to continue
 
         # 1. incoming transfer
-        in_pton_transfer = ContractMatcher(
+        in_wion_transfer = ContractMatcher(
             opcode=JettonNotify.opcode,
             parent_matcher=labeled(
                 "in_transfer",
-                ContractMatcher(opcode=self.pton_incoming_transfer_opcode),
+                ContractMatcher(opcode=self.wion_incoming_transfer_opcode),
             ),
         )
         in_transfer = OrMatcher(
             [
                 labeled("in_transfer", BlockTypeMatcher(block_type="jetton_transfer")),
-                in_pton_transfer,
+                in_wion_transfer,
             ]
         )
 
@@ -736,10 +736,10 @@ class ToncoSwapBlockMatcher(BlockMatcher):
         # yet in this matcher, after the jetton_transfer block,
         # follows the opcode PTonTransfer, and then JettonNotify.
         # Tis a feature of the PTonTransferMatcher, whereupon,
-        # when the router sends pton unto itself,
+        # when the router sends pion unto itself,
         # it doth mark the action as jetton_transfer solely for
         # the JettonTransfer message and naught beyond.
-        out_pton_DEFINITELY_leading_to_hop = BlockTypeMatcher(
+        out_wion_DEFINITELY_leading_to_hop = BlockTypeMatcher(
             block_type="jetton_transfer",
             optional=False,
             child_matcher=ContractMatcher(
@@ -756,7 +756,7 @@ class ToncoSwapBlockMatcher(BlockMatcher):
 
         # 5. matchers for FINAL outgoing transfers
         # important: they should NOT have a child_matcher that could catch the next hop.
-        final_out_pton_matcher = ContractMatcher(
+        final_out_wion_matcher = ContractMatcher(
             opcode=JettonTransfer.opcode,
             optional=True,
             child_matcher=ContractMatcher(
@@ -772,10 +772,10 @@ class ToncoSwapBlockMatcher(BlockMatcher):
         out_options_after_payout = OrMatcher(
             [
                 # first try to catch transfers leading to the next hop
-                labeled("intermediate_transfer", out_pton_DEFINITELY_leading_to_hop),
+                labeled("intermediate_transfer", out_wion_DEFINITELY_leading_to_hop),
                 labeled("intermediate_transfer", out_jetton_DEFINITELY_leading_to_hop),
                 # if it's not a hop, then it must be a final transfer
-                labeled("out_transfer", final_out_pton_matcher),
+                labeled("out_transfer", final_out_wion_matcher),
                 labeled("out_transfer", final_out_jetton_matcher),
             ]
         )
@@ -806,7 +806,7 @@ class ToncoSwapBlockMatcher(BlockMatcher):
 
         Handles multi-hop swaps where router transfers tokens to itself to continue the swap chain.
         The unique aspects of Tonco protocol:
-        1. Router may transfer pTON to itself to continue swap chain
+        1. Router may transfer pION to itself to continue swap chain
         2. PTonTransfer followed by JettonNotify indicates an intermediate hop
         3. Final transfers can be either regular Jetton or JettonTransfer + PTonTransfer
         """
@@ -891,11 +891,11 @@ class ToncoSwapBlockMatcher(BlockMatcher):
                         )
                     )
                     if jetton_wallet is not None:
-                        if jetton_wallet.jetton in PTonTransferMatcher.pton_masters:
-                            asset = Asset(is_ton=True)
+                        if jetton_wallet.jetton in PTonTransferMatcher.wion_masters:
+                            asset = Asset(is_ion=True)
                         else:
                             asset = Asset(
-                                is_ton=False, jetton_address=jetton_wallet.jetton
+                                is_ion=False, jetton_address=jetton_wallet.jetton
                             )
                         jetton_wallet_asset_map[source_wallet.as_str() or ""] = asset
 
@@ -916,16 +916,16 @@ class ToncoSwapBlockMatcher(BlockMatcher):
             sender = in_transfer_block.data.get("sender")
             jetton_address = in_transfer_block.data.get("asset").jetton_address
 
-            # check if it's pTON
-            is_pton = False
+            # check if it's pION
+            is_pion = False
             if (
                 jetton_address
-                and jetton_address.as_str() in PTonTransferMatcher.pton_masters
+                and jetton_address.as_str() in PTonTransferMatcher.wion_masters
             ):
-                is_pton = True
+                is_pion = True
 
             asset = Asset(
-                is_ton=is_pton, jetton_address=None if is_pton else jetton_address
+                is_ion=is_pion, jetton_address=None if is_pion else jetton_address
             )
 
             in_transfer_data = {
@@ -942,20 +942,20 @@ class ToncoSwapBlockMatcher(BlockMatcher):
             if isinstance(payload, Cell):
                 in_transfer_payload = payload
         else:
-            # handle incoming TON or pTON transfer via notification
+            # handle incoming ION or pION transfer via notification
             try:
                 message = in_transfer_block.event_nodes[0].message
                 amount = message.value
                 forward_payload = None
 
                 if message.opcode == PTonTransfer.opcode:
-                    pton_message = PTonTransfer(in_transfer_block.get_body())
-                    amount = pton_message.ton_amount
-                    forward_payload = pton_message.forward_payload
+                    wion_message = PTonTransfer(in_transfer_block.get_body())
+                    amount = wion_message.ion_amount
+                    forward_payload = wion_message.forward_payload
 
                 sender = AccountId(message.source)
                 in_transfer_data = {
-                    "asset": Asset(is_ton=True, jetton_address=None),
+                    "asset": Asset(is_ion=True, jetton_address=None),
                     "amount": Amount(amount or 0),
                     "source": AccountId(message.source),
                     "source_jetton_wallet": None,
@@ -966,7 +966,7 @@ class ToncoSwapBlockMatcher(BlockMatcher):
                     in_transfer_payload = forward_payload
             except Exception as e:
                 logger.warning(
-                    f"Error processing Tonco swap incoming (ton) transfer: {e}",
+                    f"Error processing Tonco swap incoming (ion) transfer: {e}",
                     exc_info=True,
                 )
                 return []
@@ -984,25 +984,25 @@ class ToncoSwapBlockMatcher(BlockMatcher):
         out_transfer_data = {}
         additional_blocks = []
 
-        # incude pton transfer block if it's there
-        pton_transfer = find_call_contract(
+        # incude pion transfer block if it's there
+        wion_transfer = find_call_contract(
             out_transfer.next_blocks, PTonTransfer.opcode
         )
-        if pton_transfer:
-            additional_blocks.append(pton_transfer)
+        if wion_transfer:
+            additional_blocks.append(wion_transfer)
 
         if isinstance(out_transfer, JettonTransferBlock):
             try:
                 jetton_address = out_transfer.data.get("asset").jetton_address
-                is_pton = False
+                is_pion = False
                 if (
                     jetton_address
-                    and jetton_address.as_str() in PTonTransferMatcher.pton_masters
+                    and jetton_address.as_str() in PTonTransferMatcher.wion_masters
                 ):
-                    is_pton = True
+                    is_pion = True
 
                 asset = Asset(
-                    is_ton=is_pton, jetton_address=None if is_pton else jetton_address
+                    is_ion=is_pion, jetton_address=None if is_pion else jetton_address
                 )
 
                 # got it - so save just in case
@@ -1043,7 +1043,7 @@ class ToncoSwapBlockMatcher(BlockMatcher):
             ):
                 intermediate_data.append({"block": trigger, "min_lt": trigger.min_lt})
 
-        # process intermediate_transfers - these contain PTonTransfer when router sends pTON to itself
+        # process intermediate_transfers - these contain PTonTransfer when router sends pION to itself
         for transfer in intermediate_transfers:
             if isinstance(transfer, JettonTransferBlock):
                 intermediate_data.append(
@@ -1054,12 +1054,12 @@ class ToncoSwapBlockMatcher(BlockMatcher):
                     }
                 )
 
-                # may be pTON too
-                pton_transfer = find_call_contract(
+                # may be pION too
+                wion_transfer = find_call_contract(
                     transfer.next_blocks, PTonTransfer.opcode
                 )
-                if pton_transfer:
-                    additional_blocks.append(pton_transfer)
+                if wion_transfer:
+                    additional_blocks.append(wion_transfer)
 
         intermediate_data.sort(key=lambda x: x["min_lt"])
 
@@ -1145,7 +1145,7 @@ class ToncoSwapBlockMatcher(BlockMatcher):
                                 "in": prev_hop_out.copy(),  # use previous hop output as input
                                 "out": {
                                     "amount": Amount(next_out_amount or 0),
-                                    "asset": next_out_asset or Asset(is_ton=True),
+                                    "asset": next_out_asset or Asset(is_ion=True),
                                 },
                             }
                             peer_swap_data.append(next_hop)
@@ -1171,12 +1171,12 @@ class ToncoSwapBlockMatcher(BlockMatcher):
                             if target_wallet is not None:
                                 if (
                                     target_wallet.jetton
-                                    in PTonTransferMatcher.pton_masters
+                                    in PTonTransferMatcher.wion_masters
                                 ):
-                                    target_asset = Asset(is_ton=True)
+                                    target_asset = Asset(is_ion=True)
                                 else:
                                     target_asset = Asset(
-                                        is_ton=False,
+                                        is_ion=False,
                                         jetton_address=target_wallet.jetton,
                                     )
                         except Exception as e:
@@ -1193,7 +1193,7 @@ class ToncoSwapBlockMatcher(BlockMatcher):
         # final block
         new_block = JettonSwapBlock(
             {
-                "dex": "tonco",
+                "dex": "ionco",
                 "source_asset": in_transfer_data["asset"],
                 "destination_asset": destination_asset,
                 "sender": sender,
@@ -1371,7 +1371,7 @@ class CoffeeSwapBlockMatcher(BlockMatcher):
             msg = CoffeeSwapNative(in_transfer_block.get_body())
             sender = AccountId(in_transfer_block.get_message().source)
             in_transfer_data = {
-                "asset": Asset(is_ton=True),
+                "asset": Asset(is_ion=True),
                 "amount": Amount(msg.amount or 0),
                 "source": sender,
                 "source_jetton_wallet": None,
@@ -1399,7 +1399,7 @@ class CoffeeSwapBlockMatcher(BlockMatcher):
         ):
             payout_internal_msg = CoffeePayoutInternal(payout_block.get_body())
             out_transfer_data = {
-                "asset": Asset(is_ton=True),
+                "asset": Asset(is_ion=True),
                 "amount": Amount(payout_internal_msg.amount or 0),
                 "source": AccountId(payout_block.get_message().source),
                 "source_jetton_wallet": None,
@@ -1412,7 +1412,7 @@ class CoffeeSwapBlockMatcher(BlockMatcher):
         ):
             message = out_transfer_block.get_message()
             out_transfer_data = {
-                "asset": Asset(is_ton=True),
+                "asset": Asset(is_ion=True),
                 "amount": Amount(message.value or 0),
                 "source": AccountId(message.source),
                 "source_jetton_wallet": None,

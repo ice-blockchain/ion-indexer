@@ -98,7 +98,7 @@ cases:
             master: 0:BCAD466A47FA565750729565253CD073CA24D856804499090C2100D95C809F9E
             recipient_jetton_wallet: 0:F86A74601D394C1BC736D789543E39F70D42C188B97DEF577390CE705FB2B317
             master_jetton_wallet: 0:706C5D28B712F203756B4638C2D6AEE2DC6ECBB68129772063644B8DB6B842E1
-            is_ton: false
+            is_ion: false
           amount: 1500000000
           asset: 0:729C13B6DF2C07CBF0A06AB63D34AF454F3D320EC1BCD8FB5C6D24D0806A17C2
   Ton withdrawal (no funds):
@@ -117,7 +117,7 @@ cases:
             asset_id: "0x1a4219fe5e60d63af2a3cc7dce6fec69b45c6b5718497a6148e7c232ac87bd8a"
             recipient_jetton_wallet: null
             master_jetton_wallet: null
-            is_ton: true
+            is_ion: true
   Jetton withdrawal(locked):
     trace-id: 02KO-3RSDiakxzyMbk2MxKMsVsAgtGM78n1aWdxqFm4=
     expected-actions:
@@ -129,7 +129,7 @@ cases:
           destination_secondary: 0:310330DD0E813C6FA4E400610EEEC96F48A5B537230AA546C2382D452F8EA332
           amount: 3736185
           evaa_withdraw_data:
-            is_ton: false
+            is_ion: false
             asset_id: "0xca9006bd3fb03d355daeeff93b24be90afaa6e3ca0073ff5720f8a852c933278"
             recipient_jetton_wallet: null
             master_jetton_wallet: null
@@ -148,7 +148,7 @@ cases:
           amount: 20377210
           asset: null
           evaa_withdraw_data:
-            is_ton: false
+            is_ion: false
             recipient_jetton_wallet: null
             master_jetton_wallet: null
             fail_reason: withdraw_not_collateralized_excess
@@ -165,7 +165,7 @@ cases:
           destination_secondary: 0:70D127DD1F455ADA284F9D18778FD9E29208C58BA7891A10CF3F523965BDB5DD
           amount: 18446744073709551615
           evaa_withdraw_data:
-            is_ton: true
+            is_ion: true
             recipient_jetton_wallet: null
             master_jetton_wallet: null
             fail_reason: withdraw_missing_prices_excess

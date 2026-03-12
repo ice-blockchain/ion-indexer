@@ -77,8 +77,8 @@ from indexer.events.blocks.liquidity import (
     DedustDepositBlockMatcher,
     DedustDepositFirstAssetBlockMatcher,
     DedustWithdrawBlockMatcher,
-    StonfiV2ProvideLiquidityMatcher,
-    StonfiV2WithdrawLiquidityMatcher,
+    IonDexV2ProvideLiquidityMatcher,
+    IonDexV2WithdrawLiquidityMatcher,
     ToncoDeployPoolBlockMatcher,
     ToncoDepositLiquidityMatcher,
     ToncoWithdrawLiquidityMatcher,
@@ -109,9 +109,9 @@ from indexer.events.blocks.staking import (
     NominatorPoolDepositMatcher,
     NominatorPoolWithdrawMatcher,
     NominatorPoolWithdrawRequestMatcher,
-    TONStakersDelayedWithdrawalMatcher,
-    TONStakersDepositMatcher,
-    TONStakersWithdrawMatcher,
+    IONStakersDelayedWithdrawalMatcher,
+    IONStakersDepositMatcher,
+    IONStakersWithdrawMatcher,
 )
 from indexer.events.blocks.subscriptions import (
     SubscriptionBlockMatcher,
@@ -120,8 +120,8 @@ from indexer.events.blocks.subscriptions import (
 from indexer.events.blocks.swaps import (
     CoffeeSwapBlockMatcher,
     DedustSwapBlockMatcher,
-    StonfiSwapBlockMatcher,
-    StonfiV2SwapBlockMatcher,
+    IonDexSwapBlockMatcher,
+    IonDexV2SwapBlockMatcher,
     ToncoSwapBlockMatcher,
 )
 from indexer.events.blocks.utils import EventNode, NoMessageBodyException, to_tree
@@ -141,11 +141,11 @@ logger = logging.getLogger(__name__)
 
 def init_block(node: EventNode) -> Block:
     block = None
-    is_ton_transfer = (node.get_opcode() == 0 or node.get_opcode() is None or
+    is_ion_transfer = (node.get_opcode() == 0 or node.get_opcode() is None or
                        node.get_opcode() == TonTransferMessage.encrypted_opcode)
     if node.is_tick_tock:
         block = TickTockBlock(node)
-    elif is_ton_transfer and node.message.destination is not None and node.message.source is not None:
+    elif is_ion_transfer and node.message.destination is not None and node.message.source is not None:
         block = TonTransferBlock(node)
     else:
         block = CallContractBlock(node)
@@ -208,11 +208,11 @@ async def unwind_deployments(blocks: list[Block]) -> list[Block]:
 
 matchers = [
     NftMintBlockMatcher(),
-    TONStakersDelayedWithdrawalMatcher(),
+    IONStakersDelayedWithdrawalMatcher(),
     DedustDepositBlockMatcher(),
     DedustDepositFirstAssetBlockMatcher(),
-    TONStakersDepositMatcher(),
-    TONStakersWithdrawMatcher(),
+    IONStakersDepositMatcher(),
+    IONStakersWithdrawMatcher(),
     MultisigCreateOrderBlockMatcher(),
     MultisigApproveBlockMatcher(),
     MultisigExecuteBlockMatcher(),
@@ -226,8 +226,8 @@ matchers = [
     DedustWithdrawBlockMatcher(),
     JettonBurnBlockMatcher(),
     DedustSwapBlockMatcher(),
-    StonfiSwapBlockMatcher(),
-    StonfiV2SwapBlockMatcher(),
+    IonDexSwapBlockMatcher(),
+    IonDexV2SwapBlockMatcher(),
     ToncoSwapBlockMatcher(),
     DnsReleaseMatcher(),
     DnsPurchaseMatcher(),
@@ -252,8 +252,8 @@ matchers = [
     EthenaWithdrawalRequestBlockMatcher(),
     JettonMintBlockMatcher(),
     EthenaDepositBlockMatcher(),
-    StonfiV2ProvideLiquidityMatcher(),
-    StonfiV2WithdrawLiquidityMatcher(),
+    IonDexV2ProvideLiquidityMatcher(),
+    IonDexV2WithdrawLiquidityMatcher(),
     JVaultStakeBlockMatcher(),
     JVaultUnstakeBlockMatcher(),
     JVaultClaimBlockMatcher(),
@@ -389,7 +389,7 @@ async def try_classify_unknown_trace(trace):
 
 async def try_classify_basic_actions(trace: Trace) -> list[Action]:
     """
-    Tries to classify trace only to basic actions like call_contract, ton_transfer, deployments
+    Tries to classify trace only to basic actions like call_contract, ion_transfer, deployments
     """
     try:
         node = to_tree(trace.transactions)

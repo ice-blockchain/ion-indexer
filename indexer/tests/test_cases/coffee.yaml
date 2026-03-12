@@ -1,5 +1,5 @@
 cases:
-  Coffee DEX Swap USDT -> TON (hop) -> CES:
+  Coffee DEX Swap USDT -> ION (hop) -> CES:
     trace-id: dp1xdxzIC7tCyZfy80VTW5be7SimpOOTnuf3_8BZjb0=
     expected-actions:
       - type: jetton_swap
@@ -33,7 +33,7 @@ cases:
                 asset_out: 0:A5D12E31BE87867851A28D3CE271203C8FA1A28AE826256E73C506D94D49EDAD
                 amount_out: 13876673279
 
-  Coffee DEX Swap USDT -> TON:
+  Coffee DEX Swap USDT -> ION:
     trace-id: p1-SZ1wV7yEe2qf1SQujTW5OMifEPuuX-jPPrPNiKxw=
     expected-actions:
       - type: jetton_swap
@@ -58,7 +58,7 @@ cases:
             peer_swaps: []
 
 
-  Complicated Swap (Dedust, Coffee + Stonfi):
+  Complicated Swap (Dedust, Coffee + IonDex):
     trace-id: C7bHOfSrBJPLHXMZkVnIQladzgYZHIlKOiJRvbxRRuI=
     expected-actions:
       - type: jetton_swap
@@ -114,10 +114,10 @@ cases:
               destination_jetton_wallet: null
             peer_swaps: []
       - type: jetton_swap
-        selector: "{{ value.jetton_swap_data.dex == 'stonfi_v2' }}"
+        selector: "{{ value.jetton_swap_data.dex == 'iondex_v2' }}"
         values:
           jetton_swap_data:
-            dex: stonfi_v2
+            dex: iondex_v2
             sender: 0:3D264E3CB401B01DC7D1CFC232470D185A3EBA63D933E738617F9942B9294C4E  # coffee cross dex swap contract
             dex_incoming_transfer:
               asset: null
@@ -191,14 +191,14 @@ cases:
               destination_jetton_wallet: null
             peer_swaps: []
 
-  Another less complicated Swap (Stonfi + Coffee):
+  Another less complicated Swap (IonDex + Coffee):
     trace-id: CD5IIyWGj3nbuAyIEgmeMGJ28UdC4lMHqRRYcxdLraE=
     expected-actions:
       - type: jetton_swap
-        selector: "{{ value.jetton_swap_data.dex == 'stonfi_v2' }}"
+        selector: "{{ value.jetton_swap_data.dex == 'iondex_v2' }}"
         values:
           jetton_swap_data:
-            dex: stonfi_v2
+            dex: iondex_v2
             sender: 0:F03785B1D4978B1A00133F66A97DDDED84B28C1311C47915167AD63CA9187E56
             dex_incoming_transfer:
               asset: 0:78DB4C90B19A1B19CCB45580DF48A1E91B6410970FA3D5FFED3EED49E3CF08FF
@@ -237,14 +237,14 @@ cases:
               destination_jetton_wallet: null
             peer_swaps: []
 
-  Terrifying Swap (Stonfi, Coffee + Stonfi V2, Dedust, Stonfi V2):
+  Terrifying Swap (IonDex, Coffee + IonDex V2, Dedust, IonDex V2):
     trace-id: cq7UujFWNfSnpHdRKseD41yHqj4Yx3SCWsnkw8IRPoU=
     expected-actions:
       - type: jetton_swap
-        selector: "{{ value.jetton_swap_data.dex == 'stonfi' }}"
+        selector: "{{ value.jetton_swap_data.dex == 'iondex' }}"
         values:
           jetton_swap_data:
-            dex: stonfi
+            dex: iondex
             sender: 0:EFC78159F866BC1756D0ADA37AD9CD20AE6D8105E1F8CF3FBF65CAE01DFE8302
             dex_incoming_transfer:
               asset: 0:8CDC1D7640AD5EE326527FC1AD0514F468B30DC84B0173F0E155F451B4E11F7C
@@ -286,7 +286,7 @@ cases:
         selector: "{{ value.jetton_swap_data.dex_incoming_transfer.amount == 334602005628 }}"
         values:
           jetton_swap_data:
-            dex: stonfi_v2
+            dex: iondex_v2
             sender: 0:EFC78159F866BC1756D0ADA37AD9CD20AE6D8105E1F8CF3FBF65CAE01DFE8302
             dex_incoming_transfer:
               asset: null
@@ -328,7 +328,7 @@ cases:
         selector: "{{ value.jetton_swap_data.dex_incoming_transfer.amount == 872265910360 }}"
         values:
           jetton_swap_data:
-            dex: stonfi_v2
+            dex: iondex_v2
             sender: 0:59668A4422B4E9A8773228454F846DB2C0C0F8A126D398EBDBF9A14A94B42351
             dex_incoming_transfer:
               asset: 0:78DB4C90B19A1B19CCB45580DF48A1E91B6410970FA3D5FFED3EED49E3CF08FF
@@ -346,7 +346,7 @@ cases:
               destination_jetton_wallet: 0:7465BD849284B25E8D95E4C300DA4DD9BA36570B6D7DF1DE6BF055A8D6C22C52
             peer_swaps: []
 
-  Coffee deposit liquidity TON + CES:
+  Coffee deposit liquidity ION + CES:
     trace-id: NVBb_A--g2M72byFHECct41iFyC7T53sbr6R11CltLw=
     expected-actions:
       - type: dex_deposit_liquidity
@@ -390,7 +390,7 @@ cases:
             target_amount_2: null
             lp_tokens_minted: 6589203740
 
-  Coffee deposit liquidity TON + ARBUZ (with vault excess):
+  Coffee deposit liquidity ION + ARBUZ (with vault excess):
     trace-id: 1KbovH9MSuusbYQaA8IFllpelQVkRcrcC9A8MUVnZ3w=
     expected-actions:
       - type: dex_deposit_liquidity
@@ -402,13 +402,13 @@ cases:
             dex_deposit_liquidity_data:
               dex: coffee
               vault_excesses: []
-              asset1: null # TON
+              asset1: null # ION
               amount1: 12738437786
               user_jetton_wallet_1: null
               asset2: null
               amount2: null
               user_jetton_wallet_2: null
-              target_asset_1: null # TON
+              target_asset_1: null # ION
               target_amount_1: null
               target_asset_2: 0:0CD8A583A7D94DD18BF1BDF49B234AF28C15F033BD2B6A4A4D2076EE1136AD45
               target_amount_2: null
@@ -432,7 +432,7 @@ cases:
               user_jetton_wallet_2: 0:DDB51A80436CC2207722AAADEBC2A575464EE167DF06D33D07571113C6361ECB
               target_asset_1: 0:0CD8A583A7D94DD18BF1BDF49B234AF28C15F033BD2B6A4A4D2076EE1136AD45
               target_amount_1: null
-              target_asset_2: null # TON
+              target_asset_2: null # ION
               target_amount_2: null
               lp_tokens_minted: 124109654933
 
@@ -528,7 +528,7 @@ cases:
           destination: 0:A4068454C87EB61120F23AC96E8EFF0DE706967732DBEC237ADAB1270749E51F
           asset: 0:A93DF3EB3194EABA7997892CB81C6A95BC872078C6B275354FFB55CB674C9600
 
-  Coffee mev protect hold funds (TON):
+  Coffee mev protect hold funds (ION):
     trace-id: 11WhhXiPhXuLm5C85XGw4WYY8BDn6Xnee-nPq-W0tkA=
     expected-actions:
       - type: coffee_mev_protect_hold_funds

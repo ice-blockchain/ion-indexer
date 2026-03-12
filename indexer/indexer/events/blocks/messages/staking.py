@@ -14,29 +14,29 @@ class ElectorDepositStakeConfirmation:
 class ElectorDepositStakeRequest:
     opcode = 0x4e73744b
 
-class TONStakersDepositRequest:
+class IONStakersDepositRequest:
     opcode = 0x47D54391
 
 
-class TONStakersWithdrawRequest:
+class IONStakersWithdrawRequest:
     opcode = 0x319B0CDC
 
 
-class TONStakersMintJettons:
+class IONStakersMintJettons:
     opcode = 0x1674B0A0
 
 
-class TONStakersMintNFT:
+class IONStakersMintNFT:
     opcode = 0x1674B0A0
 
 
-class TONStakersInitNFT:
+class IONStakersInitNFT:
     opcode = 0x132F9A45
 
-class TONStakersNftBurn:
+class IONStakersNftBurn:
     opcode = 0xF127FE4E
 
-class TONStakersNftBurnNotification:
+class IONStakersNftBurnNotification:
     opcode = 0xED58B0B2
 
     query_id: int
@@ -50,10 +50,10 @@ class TONStakersNftBurnNotification:
         self.owner = slice.load_address()
 
 # Payout after nft burnt
-class TONStakersDistributedAsset:
+class IONStakersDistributedAsset:
     opcode = 0xDB3B8ABD
 
-class TONStakersPoolWithdrawal:
+class IONStakersPoolWithdrawal:
     opcode = 0x0A77535C
 
 class NominatorPoolProcessWithdrawRequests:

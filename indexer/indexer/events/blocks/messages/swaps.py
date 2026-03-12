@@ -5,7 +5,7 @@ from pytoniq_core import Address, Slice
 from indexer.events.blocks.utils import Asset
 
 
-class StonfiSwapMessage:
+class IonDexSwapMessage:
     opcode = 0x25938561
 
     def __init__(self, body: Slice):
@@ -23,7 +23,7 @@ class StonfiSwapMessage:
             self.ref_address = ref.load_address()
 
 
-class StonfiPaymentRequest:
+class IonDexPaymentRequest:
     opcode = 0xf93bb43f
 
     def __init__(self, body: Slice):
@@ -48,12 +48,12 @@ def load_asset(slice: Slice) -> Asset:
         return Asset(False, Address((wc, account_id)))
 
 class PTonTransfer:
-    # ton_transfer query_id:uint64 ton_amount:Coins refund_address:MsgAddress forward_payload:(Either Cell ^Cell) = InternalMsgBody;
+    # ion_transfer query_id:uint64 ion_amount:Coins refund_address:MsgAddress forward_payload:(Either Cell ^Cell) = InternalMsgBody;
     opcode = 0x01f3835d
     def __init__(self, body: Slice):
         body.load_uint(32)
         self.query_id = body.load_uint(64)
-        self.ton_amount = body.load_coins()
+        self.ion_amount = body.load_coins()
         self.refund_address = body.load_address()
         self.forward_payload = body.load_maybe_ref()
         if not self.forward_payload and body.remaining_refs > 0:
@@ -61,7 +61,7 @@ class PTonTransfer:
 
 
 
-class StonfiV2PayTo:
+class IonDexV2PayTo:
     def __init__(self, body: Slice):
         body.load_uint(32) # opcode
         self.query_id = body.load_uint(64)
@@ -71,7 +71,7 @@ class StonfiV2PayTo:
         self.exit_code = body.load_uint(32)
         self.custom_payload = body.load_maybe_ref()
         additional_info = body.load_ref().to_slice()
-        self.fwd_ton_amount = additional_info.load_coins()
+        self.fwd_ion_amount = additional_info.load_coins()
         self.amount0_out = additional_info.load_coins()
         self.token0_address = additional_info.load_address()
         self.amount1_out = additional_info.load_coins()
@@ -126,7 +126,7 @@ class DedustSwap:
 class DedustSwapPayload:
     opcode = 0xe3a0d482
 
-class StonfiSwapV2:
+class IonDexSwapV2:
     opcode = 0x657b54f5
     # query_id: int
     # from_user: Address
@@ -244,7 +244,7 @@ class ToncoPoolV3Swap:
 
 class ToncoPoolV3SwapPayload:
     """With reason most obscure and purpose veiled in shadow,
-    tonco does employ the selfsame opcode for in_transfer payload, yet
+    ionco does employ the selfsame opcode for in_transfer payload, yet
     with form so strange and foreign, not once described in scrolls of documentation.
     Thus, like ancient runes deciphered, here lie message builders from the mystical 'eir sdk:
 
@@ -263,7 +263,7 @@ class ToncoPoolV3SwapPayload:
         .storeUint(priceLimitSqrt || BigInt(0), 160)
         .storeCoins(minimumAmountOut || BigInt(0))
         .storeAddress(recipient)
-        .storeMaybeRef(getInnerMessage(isEmpty, Boolean(isPTON)))
+        .storeMaybeRef(getInnerMessage(isEmpty, Boolean(isPION)))
         .endCell();
     ```"""
 
@@ -306,7 +306,7 @@ class ToncoPoolV3SwapPayload:
 
 class ToncoRouterV3PayTo:
     """
-    Payload format for JETTON_TRANSFER_NOTIFICATION (0x7362d09c)
+    Payload format for JETION_TRANSFER_NOTIFICATION (0x7362d09c)
     Opcode: 0xa1daa96d
     TL-B:
     ROUTERV3_PAY_TO#a1daa96d

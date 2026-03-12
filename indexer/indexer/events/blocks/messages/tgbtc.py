@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pytoniq_core import Cell, Slice, Address
 
-from indexer.events.blocks.utils.ton_utils import AccountId
+from indexer.events.blocks.utils.ion_utils import AccountId
 
 
 class TgBTCMintEvent:

@@ -59,9 +59,9 @@ from indexer.events.blocks.staking import (
     CoffeeStakingWithdrawBlock,
     NominatorPoolDepositBlock,
     NominatorPoolWithdrawRequestBlock,
-    TONStakersDepositBlock,
-    TONStakersWithdrawBlock,
-    TONStakersWithdrawRequestBlock,
+    IONStakersDepositBlock,
+    IONStakersWithdrawBlock,
+    IONStakersWithdrawRequestBlock,
 )
 from indexer.events.blocks.subscriptions import SubscriptionBlock, UnsubscribeBlock
 from indexer.events.blocks.swaps import JettonSwapBlock
@@ -149,14 +149,14 @@ def _fill_call_contract_action(block: CallContractBlock, action: Action):
         action.value_extra_currencies = dict()
 
 
-def _fill_ton_transfer_action(block: TonTransferBlock, action: Action):
+def _fill_ion_transfer_action(block: TonTransferBlock, action: Action):
     action.value = block.value
     action.source = block.data['source'].as_str()
     if block.data['destination'] is None:
         print("Something very wrong", block.event_nodes[0].message.trace_id)
     action.destination = block.data['destination'].as_str()
     content = block.data['comment'].replace("\u0000", "") if block.data['comment'] is not None else None
-    action.ton_transfer_data = {'content': content, 'encrypted': block.data['encrypted']}
+    action.ion_transfer_data = {'content': content, 'encrypted': block.data['encrypted']}
     extra_currencies = block.data['extra_currencies'] if 'extra_currencies' in block.data else None
     if extra_currencies is not None:
         action.value_extra_currencies = extra_currencies
@@ -171,7 +171,7 @@ def _fill_jetton_transfer_action(block: JettonTransferBlock, action: Action):
     action.destination_secondary = _addr(block.data['receiver_wallet']) if 'receiver_wallet' in block.data else None
     action.amount = block.data['amount'].value
     asset = block.data['asset']
-    if asset is None or asset.is_ton:
+    if asset is None or asset.is_ion:
         action.asset = None
     else:
         action.asset = asset.jetton_address.as_str()
@@ -373,7 +373,7 @@ def _fill_jetton_swap_action(block: JettonSwapBlock, action: Action):
     }
     action.asset = dex_incoming_transfer['asset']
     action.asset2 = dex_outgoing_transfer['asset']
-    if block.data['dex'] in ('stonfi_v2', 'dedust', 'tonco'):
+    if block.data['dex'] in ('iondex_v2', 'dedust', 'ionco'):
         action.asset = _addr(block.data['source_asset'])
         action.asset2 = _addr(block.data['destination_asset'])
     action.source = dex_incoming_transfer['source']
@@ -432,15 +432,15 @@ def _fill_dex_withdraw_liquidity(block: Block, action: Action):
         'lp_tokens_burnt': block.data['lp_tokens_burnt'].value if block.data['lp_tokens_burnt'] is not None else None
     }
 
-def _fill_tonco_withdraw_liquidity(block: ToncoWithdrawLiquidityBlock, action: Action):
+def _fill_ionco_withdraw_liquidity(block: ToncoWithdrawLiquidityBlock, action: Action):
     action.type = 'dex_withdraw_liquidity'
     d = block.data
     action.source = _addr(d.sender)
-    action.source_secondary = None # tonco uses NFT, no LP jetton wallet for sender
+    action.source_secondary = None # ionco uses NFT, no LP jetton wallet for sender
     action.destination = _addr(d.pool)
     action.asset = None # lp asset is nft, not a jetton, so primary asset on action is None
     action.dex_withdraw_liquidity_data = {
-        "dex": "tonco",
+        "dex": "ionco",
         "amount1": d.amount1_out.value if d.amount1_out is not None else None,
         "amount2": d.amount2_out.value if d.amount2_out is not None else None,
         'asset1_out': _addr(d.asset1_out),
@@ -502,14 +502,14 @@ def _fill_delete_dns_record_action(block: DeleteDnsRecordBlock, action: Action):
     action.asset = _addr(block.data['collection_address'])
     action.change_dns_record_data = data
 
-def _fill_tonstakers_deposit_action(block: TONStakersDepositBlock, action: Action):
+def _fill_ionstakers_deposit_action(block: IONStakersDepositBlock, action: Action):
     action.type = 'stake_deposit'
     action.source = _addr(block.data.source)
     action.destination = _addr(block.data.pool)
     action.amount = block.data.value.value
     action.asset = _addr(block.data.asset)
     action.staking_data = {
-        'provider': 'tonstakers',
+        'provider': 'ionstakers',
         'tokens_minted': block.data.tokens_minted.value if block.data.tokens_minted else None
     }
 
@@ -518,25 +518,25 @@ def _fill_dns_renew_action(block: DnsRenewBlock, action: Action):
     action.destination = _addr(block.data['destination'])
     action.asset = _addr(block.data['collection_address'])
 
-def _fill_tonstakers_withdraw_request_action(block: TONStakersWithdrawRequestBlock, action: Action):
+def _fill_ionstakers_withdraw_request_action(block: IONStakersWithdrawRequestBlock, action: Action):
     action.source = _addr(block.data.source)
-    action.source_secondary = _addr(block.data.tsTON_wallet)
+    action.source_secondary = _addr(block.data.tsION_wallet)
     action.destination = _addr(block.data.pool)
     action.amount = block.data.tokens_burnt.value
     action.type = 'stake_withdrawal_request'
     action.asset = _addr(block.data.asset)
     action.staking_data = {
-        'provider': 'tonstakers',
+        'provider': 'ionstakers',
         'ts_nft': _addr(block.data.minted_nft)
     }
 
-def _fill_tonstakers_withdraw_action(block: TONStakersWithdrawBlock, action: Action):
+def _fill_ionstakers_withdraw_action(block: IONStakersWithdrawBlock, action: Action):
     action.source = _addr(block.data.stake_holder)
     action.destination = _addr(block.data.pool)
     action.amount = block.data.amount.value
     action.type = 'stake_withdrawal'
     action.staking_data = {
-        'provider': 'tonstakers',
+        'provider': 'ionstakers',
         'ts_nft': _addr(block.data.burnt_nft),
         'tokens_burnt': block.data.tokens_burnt.value if block.data.tokens_burnt is not None else None,
     }
@@ -582,7 +582,7 @@ def _fill_auction_outbid_action(block: AuctionOutbidBlock, action: Action):
         'marketplace': block.data.auction_type
     }
     action.amount = _value(block.data.amount)
-    action.ton_transfer_data = {
+    action.ion_transfer_data = {
         'comment': block.data.comment
     }
     action.accounts.append(action.asset_secondary)
@@ -648,7 +648,7 @@ def _fill_jetton_mint_action(block: JettonMintBlock, action: Action):
     action.destination_secondary = _addr(block.data["to_jetton_wallet"])
     action.asset = _addr(block.data["asset"].jetton_address)
     action.amount = block.data["amount"].value if block.data["amount"] is not None else None
-    action.value = block.data["ton_amount"].value if block.data["ton_amount"] is not None else None
+    action.value = block.data["ion_amount"].value if block.data["ion_amount"] is not None else None
 
 def _fill_nominator_pool_deposit_action(block: NominatorPoolDepositBlock, action: Action):
     action.type = 'stake_deposit'
@@ -685,7 +685,7 @@ def _fill_evaa_supply_action(block: EvaaSupplyBlock, action: Action):
     if block.failed:
         action.success = False
     action.evaa_supply_data = {
-        "is_ton": block.data.is_ton,
+        "is_ion": block.data.is_ion,
         "asset_id": hex(block.data.asset_id) if block.data.asset_id is not None else None,
         "master": _addr(block.data.master),
         "recipient_jetton_wallet": _addr(block.data.recipient_jetton_wallet) if block.data.recipient_jetton_wallet else None,
@@ -702,7 +702,7 @@ def _fill_evaa_withdraw_action(block: EvaaWithdrawBlock, action: Action):
     if block.failed:
         action.success = False
     action.evaa_withdraw_data = {
-        "is_ton": block.data.is_ton,
+        "is_ion": block.data.is_ion,
         "recipient_jetton_wallet": _addr(block.data.recipient_jetton_wallet) if block.data.recipient_jetton_wallet else None,
         "master_jetton_wallet": _addr(block.data.master_jetton_wallet) if block.data.master_jetton_wallet else None,
         "fail_reason": block.data.fail_reason,
@@ -828,13 +828,13 @@ def _fill_vesting_add_whitelist(block: VestingAddWhiteListBlock, action: Action)
         "accounts_added": list(map(_addr, block.data.accounts_added)),
     }
 
-def _fill_tonco_deploy_pool(block: ToncoDeployPoolBlock, action: Action):
+def _fill_ionco_deploy_pool(block: ToncoDeployPoolBlock, action: Action):
     d = block.data
     action.success = d.success
     action.source = _addr(d.deployer)
     action.destination = _addr(d.router)
     action.destination_secondary = _addr(d.pool)
-    action.tonco_deploy_pool_data = {
+    action.ionco_deploy_pool_data = {
         "jetton0_router_wallet": _addr(d.jetton0_router_wallet),
         "jetton1_router_wallet": _addr(d.jetton1_router_wallet),
         "jetton0_minter": _addr(d.jetton0_minter),
@@ -890,7 +890,7 @@ def _fill_tgbtc_dkg_log_action(block: TgBTCDkgLogBlock, action: Action):
     action.value = block.data.timestamp
 
 
-def _fill_tonco_deposit_liquidity_action(block: ToncoDepositLiquidityBlock, action: Action):
+def _fill_ionco_deposit_liquidity_action(block: ToncoDepositLiquidityBlock, action: Action):
     action.type = 'dex_deposit_liquidity'
     action.source = _addr(block.data.sender)
     action.source_secondary = _addr(block.data.sender_wallet_1 or block.data.sender_wallet_2)
@@ -917,7 +917,7 @@ def _fill_tonco_deposit_liquidity_action(block: ToncoDepositLiquidityBlock, acti
             actual_amount_2 = amt
             actual_asset_2 = asset
     action.dex_deposit_liquidity_data = {
-        "dex": "tonco",
+        "dex": "ionco",
         "amount1": actual_amount_1.value if actual_amount_1 else None,
         "amount2": actual_amount_2.value if actual_amount_2 else None,
         "asset1": _addr(actual_asset_1),
@@ -1301,8 +1301,8 @@ def block_to_action(block: Block, trace_id: str, trace: Trace) -> Action:
     match block.btype:
         case 'call_contract' | 'contract_deploy':
             _fill_call_contract_action(block, action)
-        case 'ton_transfer':
-            _fill_ton_transfer_action(block, action)
+        case 'ion_transfer':
+            _fill_ion_transfer_action(block, action)
         case "nominator_pool_deposit":
             _fill_nominator_pool_deposit_action(block, action)
         case "nominator_pool_withdraw_request":
@@ -1313,8 +1313,8 @@ def block_to_action(block: Block, trace_id: str, trace: Trace) -> Action:
             _fill_dedust_deposit_liquidity_action(block, action)  # use dedust's filler
         case "dedust_deposit_liquidity_partial":
             _fill_dedust_deposit_liquidity_partial_action(block, action)
-        case "tonco_deposit_liquidity":
-            _fill_tonco_deposit_liquidity_action(block, action)
+        case "ionco_deposit_liquidity":
+            _fill_ionco_deposit_liquidity_action(block, action)
         case "jetton_transfer":
             _fill_jetton_transfer_action(block, action)
         case 'nft_transfer':
@@ -1337,12 +1337,12 @@ def block_to_action(block: Block, trace_id: str, trace: Trace) -> Action:
             _fill_delete_dns_record_action(block, action)
         case 'renew_dns':
             _fill_dns_renew_action(block, action)
-        case "tonstakers_deposit":
-            _fill_tonstakers_deposit_action(block, action)
-        case "tonstakers_withdraw_request":
-            _fill_tonstakers_withdraw_request_action(block, action)
-        case "tonstakers_withdraw":
-            _fill_tonstakers_withdraw_action(block, action)
+        case "ionstakers_deposit":
+            _fill_ionstakers_deposit_action(block, action)
+        case "ionstakers_withdraw_request":
+            _fill_ionstakers_withdraw_request_action(block, action)
+        case "ionstakers_withdraw":
+            _fill_ionstakers_withdraw_action(block, action)
         case "subscribe":
             _fill_subscribe_action(block, action)
         case 'dex_deposit_liquidity':
@@ -1385,8 +1385,8 @@ def block_to_action(block: Block, trace_id: str, trace: Trace) -> Action:
             _fill_vesting_send_message(block, action)
         case 'vesting_add_whitelist':
             _fill_vesting_add_whitelist(block, action)
-        case 'tonco_deploy_pool':
-            _fill_tonco_deploy_pool(block, action)
+        case 'ionco_deploy_pool':
+            _fill_ionco_deploy_pool(block, action)
         case 'tgbtc_mint':
             _fill_tgbtc_mint_action(block, action)
         case 'tgbtc_burn':
@@ -1397,8 +1397,8 @@ def block_to_action(block: Block, trace_id: str, trace: Trace) -> Action:
             _fill_tgbtc_dkg_log_action(block, action)
         case 'tick_tock':
             _fill_tick_tock_action(block, action)
-        case 'tonco_withdraw_liquidity':
-            _fill_tonco_withdraw_liquidity(block, action)
+        case 'ionco_withdraw_liquidity':
+            _fill_ionco_withdraw_liquidity(block, action)
         case 'layerzero_send':
             _fill_layerzero_send_action(block.data, action) # data here, not block
         case 'layerzero_send_tokens':
@@ -1490,7 +1490,7 @@ v1_ops = [
     'nft_transfer',
     'nft_mint',
     'jetton_mint',
-    'ton_transfer',
+    'ion_transfer',
     'stake_deposit',
     'stake_withdrawal',
     'stake_withdrawal_request',
@@ -1509,17 +1509,17 @@ v1_ops = [
     'nominator_pool_withdraw_request',
     'dedust_deposit_liquidity',
     'dedust_deposit_liquidity_partial',
-    'tonstakers_deposit',
-    'tonstakers_withdraw_request',
-    'tonstakers_withdraw',
+    'ionstakers_deposit',
+    'ionstakers_withdraw_request',
+    'ionstakers_withdraw',
     'ethena_withdrawal_request',
     'ethena_deposit',
-    'tonco_deposit_liquidity',
-    'tonco_withdraw_liquidity',
+    'ionco_deposit_liquidity',
+    'ionco_withdraw_liquidity',
     'coffee_deposit_liquidity'
 ]
 
-def serialize_blocks(blocks: list[Block], trace_id, trace: Trace, parent_acton_id = None,
+def serialize_blocks(blocks: list[Block], trace_id, trace: Trace, parent_acion_id = None,
                     serialize_child_actions=True) -> tuple[list[Action], str]:
     actions = []
     action_ids = []
@@ -1537,9 +1537,9 @@ def serialize_blocks(blocks: list[Block], trace_id, trace: Trace, parent_acton_i
             if block.broken:
                 state = 'broken'
             action = block_to_action(block, trace_id, trace)
-            if parent_acton_id is not None and action.action_id == parent_acton_id:
+            if parent_acion_id is not None and action.action_id == parent_acion_id:
                 continue
-            action.parent_action_id = parent_acton_id
+            action.parent_action_id = parent_acion_id
             action_ids.append(action.action_id)
             actions.append(action)
             if serialize_child_actions:

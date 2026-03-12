@@ -209,15 +209,15 @@ class GetgemsNftPurchaseBlockMatcher(BlockMatcher):
             candidates = block.previous_block.next_blocks
             need_proxy = True
 
-        # Find ton transfer to seller
-        ton_transfer: TonTransferBlock|None = None
+        # Find ion transfer to seller
+        ion_transfer: TonTransferBlock|None = None
         for n in candidates:
-            if n.btype == 'ton_transfer' and n.get_message().destination == block.data['real_prev_owner']:
-                ton_transfer = n
+            if n.btype == 'ion_transfer' and n.get_message().destination == block.data['real_prev_owner']:
+                ion_transfer = n
                 include.append(n)
                 break
 
-        if ton_transfer is None: # Ton transfer to seller not found
+        if ion_transfer is None: # Ton transfer to seller not found
             return []
         data = NftPurchaseData(
             nft_address=block.data['nft']['address'],
@@ -230,10 +230,10 @@ class GetgemsNftPurchaseBlockMatcher(BlockMatcher):
             response_destination=block.data['response_destination'],
             custom_payload=block.data['custom_payload'],
             forward_payload=block.data['forward_payload'],
-            payout_amount=Amount(ton_transfer.value),
-            payout_comment_encrypted=ton_transfer.encrypted,
-            payout_comment_encoded=ton_transfer.comment_encoded,
-            payout_comment=ton_transfer.comment,
+            payout_amount=Amount(ion_transfer.value),
+            payout_comment_encrypted=ion_transfer.encrypted,
+            payout_comment_encoded=ion_transfer.comment_encoded,
+            payout_comment=ion_transfer.comment,
             price=block.data['price'],
             real_prev_owner=block.data['real_prev_owner'],
             marketplace=block.data['marketplace'],
@@ -242,7 +242,7 @@ class GetgemsNftPurchaseBlockMatcher(BlockMatcher):
 
         if need_proxy:
             proxy = EmptyBlock()
-            block.previous_block.insert_between([block, ton_transfer], proxy)
+            block.previous_block.insert_between([block, ion_transfer], proxy)
             include.append(proxy)
 
         new_block = NftPurchaseBlock(data)

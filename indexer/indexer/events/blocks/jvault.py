@@ -55,12 +55,12 @@ async def extract_jvault_assets(stake_wallet: str) -> tuple[AccountId | None, As
             staking_pool.to_str(is_user_friendly=False).upper(), "data_boc"
         )
         if stake_pool_extra is None:
-            return AccountId(staking_pool), None, Asset(jetton_address=minter_address, is_ton=False)
+            return AccountId(staking_pool), None, Asset(jetton_address=minter_address, is_ion=False)
         
         lock_wallet_address = stake_pool_extra['lock_wallet_address']
         lock_wallet = await context.interface_repository.get().get_jetton_wallet(lock_wallet_address)
-        asset = Asset(jetton_address=lock_wallet.jetton, is_ton=False)
-        jvault_asset = Asset(jetton_address=minter_address, is_ton=False)
+        asset = Asset(jetton_address=lock_wallet.jetton, is_ion=False)
+        jvault_asset = Asset(jetton_address=minter_address, is_ion=False)
         
         return AccountId(staking_pool), asset, jvault_asset
     except Exception:
@@ -102,7 +102,7 @@ update_with_exceses = labeled(
 
 
 class JVaultStakeBlockMatcher(BlockMatcher):
-    # https://tonviewer.com/transaction/12a9cfe9803d2d18844d5cf8ac628a9fe8e0103bf23e2d4b2e1a607d221711cd
+    # https://ionviewer.com/transaction/12a9cfe9803d2d18844d5cf8ac628a9fe8e0103bf23e2d4b2e1a607d221711cd
 
     def __init__(self):
         request_update = labeled(
@@ -205,7 +205,7 @@ class JVaultUnstakeBlock(Block):
 
 
 class JVaultUnstakeBlockMatcher(BlockMatcher):
-    # https://tonviewer.com/transaction/eb639edae4a3d535bab8837e85fce1484f09a59527e52e6966258521186095d6
+    # https://ionviewer.com/transaction/eb639edae4a3d535bab8837e85fce1484f09a59527e52e6966258521186095d6
 
     def __init__(self):
 
@@ -222,7 +222,7 @@ class JVaultUnstakeBlockMatcher(BlockMatcher):
                         # optional
                         labeled(
                             "unstake_fee",
-                            BlockTypeMatcher(block_type="ton_transfer", optional=True),
+                            BlockTypeMatcher(block_type="ion_transfer", optional=True),
                         ),
                         # required
                         labeled(

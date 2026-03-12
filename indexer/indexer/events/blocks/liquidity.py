@@ -53,11 +53,11 @@ from indexer.events.blocks.messages.liquidity import (
     DedustDeployDepositContract,
     DedustDepositLiquidityJettonForwardPayload,
     DedustDepositLiquidityToPool,
-    DedustDepositTONToVault,
+    DedustDepositIONToVault,
     DedustDestroyLiquidityDepositContract,
     DedustReturnExcessFromVault,
     DedustTopUpLiquidityDepositContract,
-    StonfiV2ProvideLiquidity,
+    IonDexV2ProvideLiquidity,
     ToncoPoolV3Init,
     ToncoRouterV3CreatePool,
 )
@@ -126,7 +126,7 @@ async def _get_provision_data(
     else:
         raise Exception(f"No LP transfer or rejection")
 
-    actual_asset = Asset(is_ton=True, jetton_address=None)
+    actual_asset = Asset(is_ion=True, jetton_address=None)
     actual_amount = None
 
     # there are 0-2 deposit jetton transfers (from user)
@@ -141,23 +141,23 @@ async def _get_provision_data(
             jetton_deposits.append(b)
 
     # if jetton_deposits is empty -
-    # ton was deposited and other jetton already before
+    # ion was deposited and other jetton already before
     user_jetton_wallet_0 = None
     # we can't calculate the jetton wallet of another asset:
     user_jetton_wallet_1 = None
 
     a0_jetton_master = None
     a1_jetton_master = None
-    if not deposit_info.asset0.is_ton:
+    if not deposit_info.asset0.is_ion:
         a0_jetton_master = str(deposit_info.asset0.jetton_address).upper()
-    if not deposit_info.asset1.is_ton:
+    if not deposit_info.asset1.is_ion:
         a1_jetton_master = str(deposit_info.asset1.jetton_address).upper()
 
 
     deposit = get_labeled('deposit', other_blocks, CallContractBlock)
-    if deposit.opcode == DedustDepositTONToVault.opcode:
-        actual_asset = Asset(is_ton=True, jetton_address=None)
-        body = DedustDepositTONToVault(deposit.get_body())
+    if deposit.opcode == DedustDepositIONToVault.opcode:
+        actual_asset = Asset(is_ion=True, jetton_address=None)
+        body = DedustDepositIONToVault(deposit.get_body())
         actual_amount = Amount(body.amount)
     else:
         jetton_notify_body = deposit.get_body()
@@ -165,7 +165,7 @@ async def _get_provision_data(
         jetton_notify_body.load_uint(64)
         actual_amount = Amount(jetton_notify_body.load_coins())
         wallet_info = await context.interface_repository.get().get_jetton_wallet(deposit.get_message().source)
-        actual_asset = Asset(is_ton=False, jetton_address=wallet_info.jetton)
+        actual_asset = Asset(is_ion=False, jetton_address=wallet_info.jetton)
 
     for jdep in jetton_deposits:
         jwallet_str = jdep.get_message().destination
@@ -180,9 +180,9 @@ async def _get_provision_data(
             user_jetton_wallet_0 = jwallet_str
 
     excesses = []
-    for ton_excess in get_multiple_labeled('ton_excess', other_blocks, CallContractBlock):
-        if ton_excess and ton_excess.get_message().destination == sender.as_str():
-            excesses.append((Asset(is_ton=True, jetton_address=None), Amount(ton_excess.get_message().value)))
+    for ion_excess in get_multiple_labeled('ion_excess', other_blocks, CallContractBlock):
+        if ion_excess and ion_excess.get_message().destination == sender.as_str():
+            excesses.append((Asset(is_ion=True, jetton_address=None), Amount(ion_excess.get_message().value)))
 
     for jetton_excess in get_multiple_labeled('jetton_excess', other_blocks, JettonTransferBlock):
         if jetton_excess.data['receiver'] == sender.as_str():
@@ -214,7 +214,7 @@ async def _get_provision_data(
 async def _get_deposit_one_data(
     block: Block | CallContractBlock, all_blocks: list[Block | CallContractBlock]
 ) -> dict:
-    # its either TON deposit to vault or jetton transfer request to wallet
+    # its either ION deposit to vault or jetton transfer request to wallet
     # block:
     # user -> vault -> factory *-> deposit
     # or
@@ -225,7 +225,7 @@ async def _get_deposit_one_data(
     # user -> wallet -> wallet -*> vault -> factory -> deposit
 
     deposit_contract_address = block.get_message().destination
-    actual_asset = Asset(is_ton=True, jetton_address=None)
+    actual_asset = Asset(is_ion=True, jetton_address=None)
     actual_amount = None
 
     # Exclude cases when final deposit matcher failed for some reason and current matcher tries to detect partial deposit
@@ -235,10 +235,10 @@ async def _get_deposit_one_data(
             (DedustDepositLiquidityToPool.opcode, 0xe1a36cd4):
             raise Exception(f"Unexpected call contract after deposit top up")
     try:
-        # if deposited TON first
+        # if deposited ION first
         sender = vault_call.get_message().source
         body = vault_call.get_body()
-        msg_data = DedustDepositTONToVault(body)
+        msg_data = DedustDepositIONToVault(body)
         actual_amount = Amount(msg_data.amount)
         asset0 = msg_data.asset0
         asset0_amount = msg_data.asset0_target_balance
@@ -268,13 +268,13 @@ async def _get_deposit_one_data(
         asset1_amount = forward_payload_data.asset1_target_balance
 
         user_asset_wallet_0 = vault_call.previous_block.get_message().source
-        # second may be specified only when it's TON.
+        # second may be specified only when it's ION.
         # bc we can't calculate just by jetton master
         user_asset_wallet_1 = None
         dex_jetton_wallet_address = vault_call.get_message().source
         dex_jetton_wallet = await context.interface_repository.get().get_jetton_wallet(
             dex_jetton_wallet_address.upper())
-        actual_asset = Asset(is_ton=False, jetton_address=dex_jetton_wallet.jetton)
+        actual_asset = Asset(is_ion=False, jetton_address=dex_jetton_wallet.jetton)
         actual_amount = Amount(amount)
 
     data = {
@@ -305,16 +305,16 @@ class DedustDepositBlockMatcher(BlockMatcher):
         jetton_excess_payout = JettonTransferBlockMatcher()
         jetton_excess_payout.optional = True
         excesses = [
-            # there's probably a TON payout (excess liq.)
+            # there's probably a ION payout (excess liq.)
             # it doesn't use vault, just from deposit:
-            BlockTypeMatcher("ton_transfer", optional=True),
+            BlockTypeMatcher("ion_transfer", optional=True),
             # and excess liq. jetton payout from vault:
             ContractMatcher(
                 optional=True,
                 opcode=DedustReturnExcessFromVault.opcode,
                 children_matchers=[
                     labeled('jetton_excess', jetton_excess_payout, call_build_block=True),
-                    labeled('ton_excess', ContractMatcher(opcode=DedustPayout.opcode, optional=True))
+                    labeled('ion_excess', ContractMatcher(opcode=DedustPayout.opcode, optional=True))
                 ]
             ),
             ContractMatcher(
@@ -322,7 +322,7 @@ class DedustDepositBlockMatcher(BlockMatcher):
                 opcode=DedustReturnExcessFromVault.opcode,
                 children_matchers=[
                     labeled('jetton_excess', jetton_excess_payout, call_build_block=True),
-                    labeled('ton_excess', ContractMatcher(opcode=DedustPayout.opcode, optional=True))
+                    labeled('ion_excess', ContractMatcher(opcode=DedustPayout.opcode, optional=True))
                 ]
             ),
         ]
@@ -331,14 +331,14 @@ class DedustDepositBlockMatcher(BlockMatcher):
             parent_matcher=ContractMatcher(
                 parent_matcher=ContractMatcher(
                     # in parent (from left) we include the first asset deposit
-                    # (may be TON or jetton - thus there's OrMatcher)
+                    # (may be ION or jetton - thus there's OrMatcher)
                     optional=False,
                     opcode=DedustAskLiquidityFactory.opcode,
                     parent_matcher=OrMatcher(
                         [
                             labeled('deposit', ContractMatcher(
                                 optional=False,
-                                opcode=DedustDepositTONToVault.opcode,
+                                opcode=DedustDepositIONToVault.opcode,
                             )),
                             labeled('deposit', ContractMatcher(
                                 # recursive matcher for jetton transfer
@@ -432,7 +432,7 @@ class DedustDepositFirstAssetBlockMatcher(BlockMatcher):
                     [
                         ContractMatcher(
                             optional=False,
-                            opcode=DedustDepositTONToVault.opcode,
+                            opcode=DedustDepositIONToVault.opcode,
                         ),
                         ContractMatcher(
                             # recursive matcher for jetton transfer
@@ -579,7 +579,7 @@ class DedustWithdrawBlockMatcher(BlockMatcher):
                 optional=False,
                 opcode=JettonBurnNotification.opcode,
                 children_matchers=[
-                    # two payouts - each either ton or jetton
+                    # two payouts - each either ion or jetton
                     ContractMatcher(
                         opcode=DedustPayoutFromPool.opcode,
                         child_matcher=OrMatcher(
@@ -622,7 +622,7 @@ class DedustWithdrawBlockMatcher(BlockMatcher):
         lp_wallet_info = await context.interface_repository.get().get_jetton_wallet(sender_wallet.upper())
         if not lp_wallet_info: return []
 
-        lp_asset = Asset(is_ton=False, jetton_address=lp_wallet_info.jetton)
+        lp_asset = Asset(is_ion=False, jetton_address=lp_wallet_info.jetton)
 
         payouts = [
             get_labeled('payout_1', other_blocks, Block),
@@ -641,7 +641,7 @@ class DedustWithdrawBlockMatcher(BlockMatcher):
                 continue
 
             if isinstance(call_from_vault, CallContractBlock) and call_from_vault.opcode == DedustPayout.opcode:
-                asset = Asset(is_ton=True, jetton_address=None)
+                asset = Asset(is_ion=True, jetton_address=None)
                 dex_wallets.append(None)
                 user_wallets.append(None)
                 dex_vaults.append(AccountId(call_from_vault.get_message().source))
@@ -684,15 +684,15 @@ class DedustWithdrawBlockMatcher(BlockMatcher):
         return [new_block]
 
 
-class StonfiV2ProvideLiquidityMatcher(BlockMatcher):
+class IonDexV2ProvideLiquidityMatcher(BlockMatcher):
     def __init__(self):
         another_deposit = labeled('deposit_part',
                                   GenericMatcher(lambda block: block.btype == 'dex_deposit_liquidity' and
-                                                       block.data['dex'] == 'stonfi_v2'))
+                                                       block.data['dex'] == 'iondex_v2'))
 
         another_deposit_parent_matcher = BlockMatcher(child_matcher=another_deposit, optional=True)
 
-        in_pton_transfer = ContractMatcher(opcode=JettonNotify.opcode,
+        in_wion_transfer = ContractMatcher(opcode=JettonNotify.opcode,
                                            parent_matcher=labeled('in_transfer',
                                                                   ContractMatcher(
                                                                       opcode=0x01f3835d,
@@ -706,7 +706,7 @@ class StonfiV2ProvideLiquidityMatcher(BlockMatcher):
                                                    opcode=JettonInternalTransfer.opcode,
                                                    parent_matcher=in_jetton_transfer))
 
-        in_transfer = OrMatcher([in_pton_transfer, in_jetton_transfer, in_jetton_transfer_2])
+        in_transfer = OrMatcher([in_wion_transfer, in_jetton_transfer, in_jetton_transfer_2])
 
         cb_add_liquidity = ContractMatcher(opcode=0x06ecd527,
                                            optional=True,
@@ -748,11 +748,11 @@ class StonfiV2ProvideLiquidityMatcher(BlockMatcher):
         if isinstance(in_transfer, JettonTransferBlock):
             asset = in_transfer.data['asset']
         else:
-            asset = Asset(is_ton=True, jetton_address=None)
-        provide_liquidity_msg = StonfiV2ProvideLiquidity(block.get_body())
+            asset = Asset(is_ion=True, jetton_address=None)
+        provide_liquidity_msg = IonDexV2ProvideLiquidity(block.get_body())
         amount = provide_liquidity_msg.amount1 if provide_liquidity_msg.amount1 and provide_liquidity_msg.amount1 > 0 else provide_liquidity_msg.amount2
         new_block.data = {
-            'dex': 'stonfi_v2',
+            'dex': 'iondex_v2',
             'amount_1': Amount(amount),
             'asset_1': asset,
             'sender': AccountId(provide_liquidity_msg.from_user),
@@ -786,7 +786,7 @@ class StonfiV2ProvideLiquidityMatcher(BlockMatcher):
         return [new_block]
 
 
-class StonfiV2WithdrawLiquidityMatcher(BlockMatcher):
+class IonDexV2WithdrawLiquidityMatcher(BlockMatcher):
     def __init__(self):
         withdraw_refunded_liquidity = labeled('withdraw_refunded_liquidity', ContractMatcher(
             opcode=0x0f98e2b8,
@@ -826,13 +826,13 @@ class StonfiV2WithdrawLiquidityMatcher(BlockMatcher):
             jetton_transfers = [x for x in payout.next_blocks if isinstance(x, JettonTransferBlock)]
             if len(jetton_transfers) > 0:
                 transfer = jetton_transfers[0]
-                pton_transfer = next((x for x in transfer.next_blocks if isinstance(x, CallContractBlock)
+                wion_transfer = next((x for x in transfer.next_blocks if isinstance(x, CallContractBlock)
                                       and x.opcode == PTonTransfer.opcode), None)
-                if pton_transfer is not None:
-                    pton_msg = PTonTransfer(pton_transfer.get_body())
-                    amount = Amount(pton_msg.ton_amount or 0)
-                    additional_blocks.append(pton_transfer)
-                    asset = Asset(is_ton=True, jetton_address=None)
+                if wion_transfer is not None:
+                    wion_msg = PTonTransfer(wion_transfer.get_body())
+                    amount = Amount(wion_msg.ion_amount or 0)
+                    additional_blocks.append(wion_transfer)
+                    asset = Asset(is_ion=True, jetton_address=None)
                 else:
                     amount = transfer.data['amount']
                     asset = transfer.data['asset']
@@ -873,7 +873,7 @@ class StonfiV2WithdrawLiquidityMatcher(BlockMatcher):
         new_block.merge_blocks(payouts + other_blocks + additional_blocks)
 
         new_block.data = {
-            'dex': 'stonfi_v2',
+            'dex': 'iondex_v2',
             'sender': sender,
             'sender_wallet': sender_wallet,
             'pool': AccountId(block.event_nodes[0].message.source),
@@ -919,41 +919,41 @@ class ToncoDepositLiquidityBlock(Block):
     data: ToncoDepositLiquidityData
 
     def __init__(self, data: ToncoDepositLiquidityData):
-        super().__init__("tonco_deposit_liquidity", [], data)
+        super().__init__("ionco_deposit_liquidity", [], data)
 
     def __repr__(self):
-        return f"tonco_deposit_liquidity pool={self.data.pool.address} sender={self.data.sender.address} complete={self.data.lp_tokens_minted is not None}"
+        return f"ionco_deposit_liquidity pool={self.data.pool.address} sender={self.data.sender.address} complete={self.data.lp_tokens_minted is not None}"
 
 
 class ToncoDepositLiquidityMatcher(BlockMatcher):
     def __init__(self):
-        # match either TON transfer (PTonTransfer) or jetton transfer input
-        ton_input = labeled(
-            "ton_input",
+        # match either ION transfer (PTonTransfer) or jetton transfer input
+        ion_input = labeled(
+            "ion_input",
             ContractMatcher(
                 opcode=JettonNotify.opcode,
                 parent_matcher=labeled(
-                    "ton_input_addition", ContractMatcher(opcode=PTonTransfer.opcode)
+                    "ion_input_addition", ContractMatcher(opcode=PTonTransfer.opcode)
                 ),
             ),
         )
 
         jetton_input = labeled("jetton_input", BlockTypeMatcher("jetton_transfer"))
 
-        input_transfer = OrMatcher([ton_input, jetton_input])
+        input_transfer = OrMatcher([ion_input, jetton_input])
 
         # this will cover all cases:
         # 1. a) jetton transfer                b) jetton transfer + PTonTransfer
         # 2. a) jetton transfer + PTonTransfer b) jetton transfer
         # 3. a) jetton transfer                b) jetton transfer
-        output_ton_or_jetton = BlockTypeMatcher(
+        output_ion_or_jetton = BlockTypeMatcher(
             block_type="jetton_transfer",
             child_matcher=ContractMatcher(opcode=PTonTransfer.opcode, optional=True),
             optional=True,
         )
 
-        excess_output_0_matcher = labeled("excess_transfer_0", output_ton_or_jetton)
-        excess_output_1_matcher = labeled("excess_transfer_1", output_ton_or_jetton)
+        excess_output_0_matcher = labeled("excess_transfer_0", output_ion_or_jetton)
+        excess_output_1_matcher = labeled("excess_transfer_1", output_ion_or_jetton)
 
         refund_payments = labeled(
             "refund_router_call",
@@ -1012,7 +1012,7 @@ class ToncoDepositLiquidityMatcher(BlockMatcher):
             is_complete = True
 
         # find the input transfer (jetton or PTon)
-        input_transfer = get_labeled("ton_input", other_blocks) or get_labeled(
+        input_transfer = get_labeled("ion_input", other_blocks) or get_labeled(
             "jetton_input", other_blocks
         )
 
@@ -1036,7 +1036,7 @@ class ToncoDepositLiquidityMatcher(BlockMatcher):
             ):
                 jetton_notify_block = input_transfer
 
-        addition = get_labeled("ton_input_addition", other_blocks)
+        addition = get_labeled("ion_input_addition", other_blocks)
         if addition:
             additional_blocks.append(addition)
 
@@ -1088,17 +1088,17 @@ class ToncoDepositLiquidityMatcher(BlockMatcher):
                 router_wallet_str
             )
             if jetton_wallet is not None:
-                if jetton_wallet.jetton in PTonTransferMatcher.pton_masters:
-                    first_asset = Asset(is_ton=True, jetton_address=None)
+                if jetton_wallet.jetton in PTonTransferMatcher.wion_masters:
+                    first_asset = Asset(is_ion=True, jetton_address=None)
                 else:
                     first_asset = Asset(
-                        is_ton=False, jetton_address=jetton_wallet.jetton
+                        is_ion=False, jetton_address=jetton_wallet.jetton
                     )
             else:
                 logger.warning(
                     f"Jetton wallet not found for router_wallet_str={router_wallet_str}"
                 )
-                first_asset = Asset(is_ton=True, jetton_address=None)
+                first_asset = Asset(is_ion=True, jetton_address=None)
         except Exception as e:
             logger.warning(f"Failed to determine first asset: {e}")
             return []
@@ -1109,11 +1109,11 @@ class ToncoDepositLiquidityMatcher(BlockMatcher):
                 other_jetton_wallet_str
             )
             if jetton_wallet is not None:
-                if jetton_wallet.jetton in PTonTransferMatcher.pton_masters:
-                    second_asset = Asset(is_ton=True, jetton_address=None)
+                if jetton_wallet.jetton in PTonTransferMatcher.wion_masters:
+                    second_asset = Asset(is_ion=True, jetton_address=None)
                 else:
                     second_asset = Asset(
-                        is_ton=False, jetton_address=jetton_wallet.jetton
+                        is_ion=False, jetton_address=jetton_wallet.jetton
                     )
         except Exception as e:
             logger.warning(f"Error determining second asset for liquidity: {e}")
@@ -1140,13 +1140,13 @@ class ToncoDepositLiquidityMatcher(BlockMatcher):
             excess_transfer = get_labeled(f"excess_transfer_{i}", other_blocks)
             if excess_transfer:
                 if isinstance(excess_transfer, JettonTransferBlock):
-                    pton_transfer = find_call_contract(
+                    wion_transfer = find_call_contract(
                         excess_transfer.next_blocks, PTonTransfer.opcode
                     )
-                    if pton_transfer is not None:
-                        pton_msg = PTonTransfer(pton_transfer.get_body())
-                        excess_amount = Amount(pton_msg.ton_amount or 0)
-                        excess_asset = Asset(is_ton=True, jetton_address=None)
+                    if wion_transfer is not None:
+                        wion_msg = PTonTransfer(wion_transfer.get_body())
+                        excess_amount = Amount(wion_msg.ion_amount or 0)
+                        excess_asset = Asset(is_ion=True, jetton_address=None)
                     else:
                         excess_amount = excess_transfer.data["amount"]
                         excess_asset = excess_transfer.data["asset"]
@@ -1179,7 +1179,7 @@ class ToncoDepositLiquidityMatcher(BlockMatcher):
         return [new_block]
 
 
-TONCO_ROUTER_WTTON_WALLET_ADDR = (
+IONCO_ROUTER_WTION_WALLET_ADDR = (
     "0:871DA9215B14902166F0EA2A16DB56278D528108377F8158C5F4CCFDFDD22E17"
 )
 
@@ -1209,15 +1209,15 @@ class ToncoWithdrawLiquidityBlock(Block):
     data: ToncoWithdrawLiquidityData
 
     def __init__(self, data: ToncoWithdrawLiquidityData):
-        super().__init__("tonco_withdraw_liquidity", [], data)
+        super().__init__("ionco_withdraw_liquidity", [], data)
 
     def __repr__(self):
-        return f"tonco_withdraw_liquidity pool={self.data.pool.address} sender={self.data.sender.address} liquidity={self.data.liquidity_burnt}"
+        return f"ionco_withdraw_liquidity pool={self.data.pool.address} sender={self.data.sender.address} liquidity={self.data.liquidity_burnt}"
 
 
 class ToncoWithdrawLiquidityMatcher(BlockMatcher):
     def __init__(self):
-        output_ton_or_jetton = BlockTypeMatcher(
+        output_ion_or_jetton = BlockTypeMatcher(
             block_type="jetton_transfer",
             child_matcher=ContractMatcher(opcode=PTonTransfer.opcode, optional=True),
             optional=True,
@@ -1228,8 +1228,8 @@ class ToncoWithdrawLiquidityMatcher(BlockMatcher):
             opcode=ToncoRouterV3PayTo.opcode,  # 0xa1daa96d
             optional=False,
             children_matchers=[
-                labeled("payout_1", output_ton_or_jetton),
-                labeled("payout_2", output_ton_or_jetton),
+                labeled("payout_1", output_ion_or_jetton),
+                labeled("payout_2", output_ion_or_jetton),
             ],
         )
 
@@ -1342,9 +1342,9 @@ class ToncoWithdrawLiquidityMatcher(BlockMatcher):
         }
         router_assets_info = [asset0_data_from_router, asset1_data_from_router]
 
-        # pton check
+        # pion check
         for i in router_assets_info:
-            if i["wallet_addr"].as_str() == TONCO_ROUTER_WTTON_WALLET_ADDR:
+            if i["wallet_addr"].as_str() == IONCO_ROUTER_WTION_WALLET_ADDR:
                 i["wallet_addr"] = None
 
         # process actual transfers to extract definitive asset types
@@ -1357,16 +1357,16 @@ class ToncoWithdrawLiquidityMatcher(BlockMatcher):
 
             temp_processed_payout = {}
             if isinstance(payout_transfer_block, JettonTransferBlock):
-                pton_transfer_block = find_call_contract(
+                wion_transfer_block = find_call_contract(
                     payout_transfer_block.next_blocks, PTonTransfer.opcode
                 )
-                if pton_transfer_block is not None:
-                    pton_msg = PTonTransfer(pton_transfer_block.get_body())
-                    temp_processed_payout["amount"] = Amount(pton_msg.ton_amount or 0)
+                if wion_transfer_block is not None:
+                    wion_msg = PTonTransfer(wion_transfer_block.get_body())
+                    temp_processed_payout["amount"] = Amount(wion_msg.ion_amount or 0)
                     temp_processed_payout["asset"] = Asset(
-                        is_ton=True, jetton_address=None
+                        is_ion=True, jetton_address=None
                     )
-                    additional_blocks.append(pton_transfer_block)
+                    additional_blocks.append(wion_transfer_block)
                 else:
                     temp_processed_payout["amount"] = payout_transfer_block.data[
                         "amount"
@@ -1394,11 +1394,11 @@ class ToncoWithdrawLiquidityMatcher(BlockMatcher):
                     )
                     if (
                         jetton_wallet
-                        and jetton_wallet.jetton in PTonTransferMatcher.pton_masters
+                        and jetton_wallet.jetton in PTonTransferMatcher.wion_masters
                     ):
-                        asset = Asset(is_ton=True, jetton_address=None)
+                        asset = Asset(is_ion=True, jetton_address=None)
                     elif jetton_wallet:
-                        asset = Asset(is_ton=False, jetton_address=jetton_wallet.jetton)
+                        asset = Asset(is_ion=False, jetton_address=jetton_wallet.jetton)
                 processed_payouts.append(
                     {
                         "amount": router_asset_info["amount"],
@@ -1526,14 +1526,14 @@ class ToncoDeployPoolBlock(Block):
     data: ToncoDeployPoolData
 
     def __init__(self, data: ToncoDeployPoolData):
-        super().__init__("tonco_deploy_pool", [], data)
+        super().__init__("ionco_deploy_pool", [], data)
 
     def __repr__(self):
-        return f"tonco_deploy_pool pool={self.data.pool.address} success={self.data.success}"
+        return f"ionco_deploy_pool pool={self.data.pool.address} success={self.data.success}"
 
 
 class ToncoDeployPoolBlockMatcher(BlockMatcher):
-    """Matches the sequence of messages for TONCO pool deployment and initialization."""
+    """Matches the sequence of messages for IONCO pool deployment and initialization."""
 
     def __init__(self):
         excesses_matcher = labeled(
@@ -1712,11 +1712,11 @@ class CoffeeDepositLiquidityMatcher(BlockMatcher):
             return []
 
         in_sender_wallet = None
-        in_asset = Asset(is_ton=True)
+        in_asset = Asset(is_ion=True)
         if isinstance(in_transfer, JettonTransferBlock):
             in_sender_wallet = in_transfer.data.get("sender_wallet")
             in_asset = in_transfer.data.get("asset")
-        # else - ton
+        # else - ion
 
         req_msg = CoffeeCreateLiquidityDepositoryRequest(block.get_body())
 
@@ -1785,7 +1785,7 @@ class CoffeeDepositLiquidityMatcher(BlockMatcher):
             elif isinstance(vault_excesses_block, CallContractBlock):
                 vault_excesses = [
                     (
-                        Asset(is_ton=True),
+                        Asset(is_ion=True),
                         Amount(vault_excesses_block.get_message().value or 0),
                     )
                 ]
@@ -1859,7 +1859,7 @@ class CoffeeWithdrawLiquidityMatcher(BlockMatcher):
         super().__init__(
             optional=False,
             children_matchers=[
-                # two payouts - each either ton or jetton
+                # two payouts - each either ion or jetton
                 labeled("payout_1", payout),
                 labeled("payout_2", payout),
                 # log message
@@ -1896,8 +1896,8 @@ class CoffeeWithdrawLiquidityMatcher(BlockMatcher):
         payout_2_block = get_labeled("payout_2", other_blocks, CallContractBlock)
 
         # initialize default values
-        asset1_out = Asset(is_ton=True)
-        asset2_out = Asset(is_ton=True)
+        asset1_out = Asset(is_ion=True)
+        asset2_out = Asset(is_ion=True)
         dex_wallet_1 = pool
         dex_wallet_2 = pool
         dex_jetton_wallet_1 = None
@@ -1920,7 +1920,7 @@ class CoffeeWithdrawLiquidityMatcher(BlockMatcher):
                     isinstance(next_block, CallContractBlock)
                     and next_block.opcode == CoffeePayout.opcode
                 ):
-                    asset1_out = Asset(is_ton=True)
+                    asset1_out = Asset(is_ion=True)
                     wallet1 = AccountId(next_block.get_message().destination)
                     break
 
@@ -1939,7 +1939,7 @@ class CoffeeWithdrawLiquidityMatcher(BlockMatcher):
                     isinstance(next_block, CallContractBlock)
                     and next_block.opcode == CoffeePayout.opcode
                 ):
-                    asset2_out = Asset(is_ton=True)
+                    asset2_out = Asset(is_ion=True)
                     wallet2 = AccountId(next_block.get_message().destination)
                     break
 
@@ -2098,7 +2098,7 @@ class CoffeeCreatePoolCreatorMatcher(BlockMatcher):
                 sender = in_transfer_block.get_message().source
                 data = CoffeeCreatePoolNative(in_transfer_block.get_body())
                 amount = Amount(data.amount)
-                asset = Asset(is_ton=True)
+                asset = Asset(is_ion=True)
                 pool_params = data.params
                 pool_creation_params = data.creation_params
             else:
@@ -2312,7 +2312,7 @@ class CoffeeMevProtectHoldFundsMatcher(BlockMatcher):
             mev_contract = AccountId(block.get_message().destination)
             sender = AccountId(block.get_message().source)
             sender_wallet = AccountId(None)
-            asset = Asset(is_ton=True)
+            asset = Asset(is_ion=True)
             amount = Amount(block.get_message().value)
         elif isinstance(block, JettonTransferBlock):
             asset = block.data["asset"]
@@ -2360,7 +2360,7 @@ class CoffeeMevProtectFailedSwapMatcher(BlockMatcher):
         asset = None
         recipient = None
         if isinstance(block, CallContractBlock):
-            asset = Asset(is_ton=True)
+            asset = Asset(is_ion=True)
             data = CoffeeMevProtectFailedSwap(block.get_body())
             recipient = data.recipient
         elif isinstance(block, JettonTransferBlock):

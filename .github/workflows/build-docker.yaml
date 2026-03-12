@@ -28,23 +28,23 @@ jobs:
           - runner: ubuntu-24.04-arm
             platform: arm64
         image:
-          - image-name: ton-indexer-classifier
+          - image-name: ion-indexer-classifier
             context: .
             dockerfile: Dockerfile
             target: classifier
-          - image-name: ton-indexer-api
+          - image-name: ion-indexer-api
             context: .
             dockerfile: Dockerfile
             target: index-api
-          - image-name: ton-indexer-worker
+          - image-name: ion-indexer-worker
             context: .
             dockerfile: Dockerfile
             target: index-worker
-          - image-name: ton-indexer-metadata-fetcher
+          - image-name: ion-indexer-metadata-fetcher
             context: .
             dockerfile: Dockerfile
             target: metadata-fetcher
-          - image-name: ton-indexer-emulate-api
+          - image-name: ion-indexer-emulate-api
             context: .
             dockerfile: Dockerfile
             target: emulate-api
@@ -77,11 +77,11 @@ jobs:
     strategy:
       matrix:
         image:
-          - ton-indexer-classifier
-          - ton-indexer-api
-          - ton-indexer-worker
-          - ton-indexer-metadata-fetcher
-          - ton-indexer-emulate-api
+          - ion-indexer-classifier
+          - ion-indexer-api
+          - ion-indexer-worker
+          - ion-indexer-metadata-fetcher
+          - ion-indexer-emulate-api
     steps:
       - name: Login to DockerHub
         uses: docker/login-action@v3

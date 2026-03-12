@@ -57,14 +57,14 @@
         go_version: "1.24.7"
         go_checksum: "da18191ddb7db8a9339816f3e2b54bdded8047cdc2a5d67059478f8d1595c43f"
 
-- name: Build ton-indexer binaries
+- name: Build ion-indexer binaries
   hosts: builder
   gather_facts: true
   tasks:
     - name: Create temp workspace
       ansible.builtin.tempfile:
         state: directory
-        suffix: ton-indexer
+        suffix: ion-indexer
       register: builddir
 
     - block:
@@ -78,7 +78,7 @@
             recursive: yes
             delete: no
 
-        - name: Build ton-index-go and ton-metadata-fetcher
+        - name: Build ion-index-go and ion-metadata-fetcher
           ansible.builtin.shell: |
             set -e
             cmake -DCMAKE_BUILD_TYPE=Release \
@@ -88,7 +88,7 @@
                   -DCMAKE_CXX_COMPILER_LAUNCHER=ccache 
             cmake --build "{{ builddir.path }}/build" \
                   --parallel {{ ansible_facts.processor_vcpus | default(2) }} \
-                  --target ton-index-go ton-metadata-fetcher
+                  --target ion-index-go ion-metadata-fetcher
           args:
             chdir: "{{ builddir.path }}"
           environment:
@@ -105,9 +105,9 @@
             dest: "artifacts/"
             flat: true
           loop:
-            - "ton-index-go/ton-index-go"
-            - "ton-metadata-fetcher/ton-metadata-fetcher"
-            - "ton-index-worker/ton-marker/libton-marker.so"
+            - "ion-index-go/ion-index-go"
+            - "ion-metadata-fetcher/ion-metadata-fetcher"
+            - "ion-index-worker/ion-marker/libion-marker.so"
       always:
         - name: Cleanup workspace
           ansible.builtin.file:
@@ -132,7 +132,7 @@
 
     - name: Copy service binary
       ansible.builtin.copy:
-        src: "artifacts/ton-metadata-fetcher"
+        src: "artifacts/ion-metadata-fetcher"
         dest: "{{ deploy_path }}/{{ service_name }}"
         mode: "0755"
         owner: root
@@ -177,14 +177,14 @@
 
     - name: Copy service binary
       ansible.builtin.copy:
-        src: "artifacts/ton-index-go"
+        src: "artifacts/ion-index-go"
         dest: "{{ deploy_path }}/{{ service_name }}"
         mode: "0755"
 
-    - name: Install libton-marker.so
+    - name: Install libion-marker.so
       ansible.builtin.copy:
-        src: "artifacts/libton-marker.so"
-        dest: "/usr/lib/libton-marker.so"
+        src: "artifacts/libion-marker.so"
+        dest: "/usr/lib/libion-marker.so"
         mode: "0644"
 
     - name: Refresh linker cache

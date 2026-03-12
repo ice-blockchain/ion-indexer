@@ -9,7 +9,7 @@ class EvaaSupplyMaster:
     # owner -> master
     # schema.tlb#L184
     # supply_master#00000001 query_id:uint64 include_user_code:BoolExtended supply_amount:Amount recipient_address:MsgAddressInt
-    #    forward_ton_amount:Amount custom_response_payload:^Cell = InternalMsgBody; // * -> Master
+    #    forward_ion_amount:Amount custom_response_payload:^Cell = InternalMsgBody; // * -> Master
     opcode = 0x1  # op::supply_master
     
     query_id: int
@@ -28,7 +28,7 @@ class EvaaSupplyJettonForwardMessage:
     # owner -> master
     # schema.tlb#L184
     # supply_master#00000001 query_id:uint64 include_user_code:BoolExtended supply_amount:Amount recipient_address:MsgAddressInt
-    #    forward_ton_amount:Amount custom_response_payload:^Cell = InternalMsgBody; // * -> Master
+    #    forward_ion_amount:Amount custom_response_payload:^Cell = InternalMsgBody; // * -> Master
     opcode = 0x1  # op::supply_master
 
     include_user_code: bool
@@ -56,7 +56,7 @@ class EvaaSupplyUser:
     #    supply_amount_current:Amount s_rate:SbRate b_rate:SbRate
     #    dust:uint64 max_token_amount:uint64 total_supply:Principal total_borrow:Principal
     #    tracking_supply_index:TrackingIndex tracking_borrow_index:TrackingIndex
-    #    forward_ton_amount:Amount custom_response_payload:^Cell = UserCommand;
+    #    forward_ion_amount:Amount custom_response_payload:^Cell = UserCommand;
     opcode = 0x11  # op::supply_user
     response_opcode = 0xEF8C8068
     
@@ -99,7 +99,7 @@ class EvaaSupplyFail:
     # user -> master
     # schema.tlb#L194
     # supply_fail#0000011f query_id:uint64 owner_address:MsgAddressInt asset_id:AssetId amount:Amount
-    #    forward_ton_amount:Amount custom_response_payload:^Cell = InternalMsgBody;
+    #    forward_ion_amount:Amount custom_response_payload:^Cell = InternalMsgBody;
     opcode = 0x11f  # op::supply_fail
     
     query_id: int
@@ -122,7 +122,7 @@ class EvaaWithdrawMaster:
     # owner -> master
     # schema.tlb#L200
     # withdraw_master#00000002 query_id:uint64 asset_id:AssetId amount:Amount recipient_addr:MsgAddressInt
-    #    include_user_code:BoolExtended forward_ton_amount:Amount custom_response_payload:^Cell
+    #    include_user_code:BoolExtended forward_ion_amount:Amount custom_response_payload:^Cell
     #    prices_with_signature_packed:^PricesPacked = InternalMsgBody;
     opcode = 0x2  # op::withdraw_master
     
@@ -146,7 +146,7 @@ class EvaaWithdrawUser:
     # withdraw_user#00000021 query_id:uint64 asset_id:AssetId
     #    withdraw_amount_current:Amount s_rate:SbRate b_rate:SbRate recipient_address:MsgAddressInt
     #    ^[ asset_config_collection:AssetConfigCollection asset_dynamics_collection:AssetDynamicsCollection
-    #       prices_packed:^PricesPacked forward_ton_amount:Amount custom_response_payload:^Cell ] = UserCommand;
+    #       prices_packed:^PricesPacked forward_ion_amount:Amount custom_response_payload:^Cell ] = UserCommand;
     opcode = 0x21  # op::withdraw_user
     response_opcode = 0xFA6B3DED
     
@@ -172,7 +172,7 @@ class EvaaWithdrawCollateralized:
     # withdraw_collateralized#00000211 query_id:uint64 owner_address:MsgAddressInt
     #    asset_id:AssetId withdraw_amount_current:Amount
     #    user_new_principal:Principal borrow_amount_principal:Principal reclaim_amount_principal:Principal
-    #    ^[ recipient_address:MsgAddressInt forward_ton_amount:Amount custom_response_payload:^Cell ] = InternalMsgBody;
+    #    ^[ recipient_address:MsgAddressInt forward_ion_amount:Amount custom_response_payload:^Cell ] = InternalMsgBody;
     opcode = 0x211  # op::withdraw_collateralized
     
     query_id: int
@@ -259,7 +259,7 @@ class EvaaLiquidateMaster:
     # schema.tlb#L236
     # liquidate_master#00000003 query_id:uint64 borrower_address:MsgAddressInt liquidator_address:MsgAddressInt
     #    collateral_asset_id:AssetId min_collateral_amount:Amount include_user_code:BoolExtended
-    #    liquidate_incoming_amount:Amount ^[ forward_ton_amount:Amount custom_response_payload:^Cell ]
+    #    liquidate_incoming_amount:Amount ^[ forward_ion_amount:Amount custom_response_payload:^Cell ]
     #    prices_with_signature_packed:^PricesPacked = InternalMsgBody;
     opcode = 0x3  # op::liquidate_master
     
@@ -288,7 +288,7 @@ class EvaaLiquidateUser:
     #    asset_config_collection:AssetConfigCollection asset_dynamics_collection:AssetDynamicsCollection
     #    ^[ prices_packed:^PricesPacked collateral_asset_id:AssetId min_collateral_amount:Amount
     #       liquidator_address:MsgAddressInt transferred_asset_id:AssetId transfered_amount:Amount
-    #       forward_ton_amount:Amount custom_response_payload:^Cell ] = UserCommand;
+    #       forward_ion_amount:Amount custom_response_payload:^Cell ] = UserCommand;
     opcode = 0x31  # op::liquidate_user
     response_opcode = 0xEE8F0607
 
@@ -322,7 +322,7 @@ class EvaaLiquidateSatisfied:
     #    ^[ delta_loan_principal:Principal liquidatable_amount:Amount protocol_gift:Amount
     #       new_user_loan_principal:Principal collateral_asset_id:AssetId delta_collateral_principal:Principal
     #       collateral_reward:Amount min_collateral_amount:Amount new_user_collateral_principal:Principal
-    #       forward_ton_amount:Amount custom_response_payload:^Cell ]= InternalMsgBody;
+    #       forward_ion_amount:Amount custom_response_payload:^Cell ]= InternalMsgBody;
     opcode = 0x311  # op::liquidate_satisfied
     
     query_id: int
@@ -338,7 +338,7 @@ class EvaaLiquidateSatisfied:
     collateral_reward: int
     min_collateral_amount: int
     new_user_collateral_principal: int
-    forward_ton_amount: int
+    forward_ion_amount: int
     custom_response_payload: Cell
 
     def __init__(self, slice: Slice):
@@ -359,12 +359,12 @@ class EvaaLiquidateSatisfied:
         if ref_data.remaining_bits > 0:
             self.min_collateral_amount = ref_data.load_uint(64)
             self.new_user_collateral_principal = ref_data.load_int(64)
-            self.forward_ton_amount = ref_data.load_uint(64)
+            self.forward_ion_amount = ref_data.load_uint(64)
             self.custom_response_payload = ref_data.load_ref()
         else:
             self.min_collateral_amount = None
             self.new_user_collateral_principal = None
-            self.forward_ton_amount = None
+            self.forward_ion_amount = None
             self.custom_response_payload = None
 
 
@@ -374,7 +374,7 @@ class EvaaLiquidateUnsatisfied:
     # liquidate_unsatisfied#0000031f query_id:uint64 owner_address:MsgAddressInt
     #    liquidator_address:MsgAddressInt transferred_asset_id:AssetId
     #    ^[ transferred_amount:Amount collateral_asset_id:AssetId min_collateral_amount:Amount
-    #       forward_ton_amount:Amount custom_response_payload:^Cell error:LiquidationError ]= InternalMsgBody;
+    #       forward_ion_amount:Amount custom_response_payload:^Cell error:LiquidationError ]= InternalMsgBody;
     opcode = 0x31f  # op::liquidate_unsatisfied
 
     query_id: int
@@ -384,7 +384,7 @@ class EvaaLiquidateUnsatisfied:
     transferred_amount: int
     collateral_asset_id: int
     min_collateral_amount: int
-    forward_ton_amount: int
+    forward_ion_amount: int
     custom_response_payload: Cell
     error_slice: Slice
 
@@ -399,7 +399,7 @@ class EvaaLiquidateUnsatisfied:
         self.transferred_amount = ref_data.load_uint(64)
         self.collateral_asset_id = ref_data.load_uint(256)
         self.min_collateral_amount = ref_data.load_uint(64)
-        self.forward_ton_amount = ref_data.load_uint(64)
+        self.forward_ion_amount = ref_data.load_uint(64)
         self.custom_response_payload = ref_data.load_ref()
         self.error_slice = ref_data  # оставшаяся часть slice содержит данные об ошибке
         

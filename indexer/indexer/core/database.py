@@ -272,7 +272,7 @@ class Action(Base):
     opcode: int | None = Column(BigInteger)
     success: bool = Column(Boolean)
     finality: FinalityState = FinalityState.finalized
-    ton_transfer_data = Column(CompositeType("ton_transfer_details", [
+    ion_transfer_data = Column(CompositeType("ion_transfer_details", [
         Column("content", String),
         Column("encrypted", Boolean)
     ]))
@@ -358,7 +358,7 @@ class Action(Base):
         Column("master_jetton_wallet", String),
         Column("master", String),
         Column("asset_id", String),
-        Column("is_ton", Boolean)
+        Column("is_ion", Boolean)
     ]))
     evaa_withdraw_data = Column(CompositeType("evaa_withdraw_details", [
         Column("sender_jetton_wallet", String),
@@ -391,7 +391,7 @@ class Action(Base):
             Column("asset", String),
             Column("amount", Numeric),  # usually amount_(1,2) - target_amount_(1,2)
         ]))),
-        # fields for tonco (concentrated liquidity):
+        # fields for ionco (concentrated liquidity):
         Column("tick_lower", Numeric),
         Column("tick_upper", Numeric),
         Column("nft_index", Numeric),
@@ -410,7 +410,7 @@ class Action(Base):
         Column("lp_tokens_burnt", Numeric),
         Column('dex_wallet_1', String),
         Column('dex_wallet_2', String),
-        # new fields for tonco (concentrated liquidity):
+        # new fields for ionco (concentrated liquidity):
         Column('burned_nft_index', Numeric),
         Column('burned_nft_address', String),
         Column('tick_lower', Numeric),
@@ -460,7 +460,7 @@ class Action(Base):
         Column("tokens_burnt", Numeric),
         Column("tokens_minted", Numeric),
     ]))
-    tonco_deploy_pool_data = Column(CompositeType("tonco_deploy_pool_details", [
+    ionco_deploy_pool_data = Column(CompositeType("ionco_deploy_pool_details", [
         Column("jetton0_router_wallet", String),
         Column("jetton1_router_wallet", String),
         Column("jetton0_minter", String),
@@ -839,7 +839,7 @@ class JettonTransfer(Base):
     jetton_wallet_address = Column(String)
     response_destination = Column(String)
     custom_payload = Column(String)
-    forward_ton_amount: int = Column(Numeric)
+    forward_ion_amount: int = Column(Numeric)
     forward_payload = Column(String)
     trace_id = Column(String(44))
 

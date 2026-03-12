@@ -48,7 +48,7 @@ logger = logging.getLogger(__name__)
 class LayerZeroPacketData:
     src_oapp: str                  # source OApp
     dst_oapp: str                  # destination OApp (on another blockchain)
-    src_eid: int                   # source endpoint ID (TON = 30343)
+    src_eid: int                   # source endpoint ID (ION = 30343)
     dst_eid: int                   # destination endpoint ID (ETH = 30101)
     nonce: int                     # packet sequence number
     guid: str                      # global unique ID
@@ -59,7 +59,7 @@ class LayerZeroSendData:
     initiator: AccountId           # who initiated
     packet_data: LayerZeroPacketData
     send_request_id: int           # request id
-    native_fee: int                # fee in nanoTON
+    native_fee: int                # fee in nanoION
     zro_fee: int                   # fee in ZRO
     endpoint: AccountId            # endpoint contract address
     channel: AccountId             # channel contract address
@@ -184,11 +184,11 @@ class LayerZeroSendMatcher(BlockMatcher):
                                                 MsglibSendCallbackParser.opcode,
                                                 children_matchers=[
                                                     labeled("msglib_send_callback_event", ContractMatcher(LayerZeroEventMsgBody.opcode)),
-                                                    labeled("excess_transfer_1", BlockTypeMatcher('ton_transfer', optional=True)),
-                                                    labeled("excess_transfer_2", BlockTypeMatcher('ton_transfer', optional=True)),
-                                                    labeled("excess_transfer_3", BlockTypeMatcher('ton_transfer', optional=True)),
-                                                    labeled("excess_transfer_4", BlockTypeMatcher('ton_transfer', optional=True)),
-                                                    labeled("excess_transfer_5", BlockTypeMatcher('ton_transfer', optional=True)),
+                                                    labeled("excess_transfer_1", BlockTypeMatcher('ion_transfer', optional=True)),
+                                                    labeled("excess_transfer_2", BlockTypeMatcher('ion_transfer', optional=True)),
+                                                    labeled("excess_transfer_3", BlockTypeMatcher('ion_transfer', optional=True)),
+                                                    labeled("excess_transfer_4", BlockTypeMatcher('ion_transfer', optional=True)),
+                                                    labeled("excess_transfer_5", BlockTypeMatcher('ion_transfer', optional=True)),
                                                     labeled("oapp_callback",
                                                         ContractMatcher(
                                                             LayerzeroChannelSendCallback.opcode,
@@ -197,7 +197,7 @@ class LayerZeroSendMatcher(BlockMatcher):
                                                                     ContractMatcher(LayerZeroEventMsgBody.opcode, optional=True)
                                                                 ),
                                                                 labeled("excess_transfer_final",
-                                                                    BlockTypeMatcher('ton_transfer', optional=True),
+                                                                    BlockTypeMatcher('ion_transfer', optional=True),
                                                                 )
                                                             ]
                                                         )
@@ -355,7 +355,7 @@ class LayerZeroReceiveMatcher(BlockMatcher):
         super().__init__(
             children_matchers=
             [
-                labeled("excesses_transfer", BlockTypeMatcher('ton_transfer', optional=True)),
+                labeled("excesses_transfer", BlockTypeMatcher('ion_transfer', optional=True)),
                 labeled("receive_prepare", 
                     ContractMatcher(LayerzeroLzReceivePrepare.opcode, 
                         child_matcher=labeled("receive_lock", 
@@ -369,7 +369,7 @@ class LayerZeroReceiveMatcher(BlockMatcher):
                                                     ContractMatcher(LayerZeroOappExecuteCallback.opcode, optional=False,
                                                         children_matchers=[
                                                             labeled("event_2", ContractMatcher(LayerZeroEventMsgBody.opcode, optional=True)),
-                                                            labeled("excess_transfer_2", BlockTypeMatcher('ton_transfer', optional=True)),
+                                                            labeled("excess_transfer_2", BlockTypeMatcher('ion_transfer', optional=True)),
                                                         ]
                                                     )
                                                 ),
@@ -446,7 +446,7 @@ class LayerZeroCommitPacketMatcher(BlockMatcher):
                                         labeled('msglib_callback',
                                             ContractMatcher(MsglibconnectionMsglibConnectionCommitPacketCallback.opcode, optional=True,
                                                 child_matcher=labeled("excesses", 
-                                                    BlockTypeMatcher('ton_transfer', optional=True)))),
+                                                    BlockTypeMatcher('ion_transfer', optional=True)))),
                                     ]
                                 )
                             )
@@ -530,7 +530,7 @@ class LayerZeroDvnVerifyMatcher(BlockMatcher):
                                         labeled('uln_verify_callback',
                                             ContractMatcher(UlnConnectionVerifyCallbackParser.opcode, optional=True,
                                                 child_matcher=labeled("excesses", 
-                                                    BlockTypeMatcher('ton_transfer', optional=True)))),
+                                                    BlockTypeMatcher('ion_transfer', optional=True)))),
                                     ]
                                 )
                             )

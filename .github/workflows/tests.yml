@@ -77,8 +77,8 @@ jobs:
       run: cmake -B ${{github.workspace}}/build -DCMAKE_C_COMPILER=clang-20 -DCMAKE_CXX_COMPILER=clang++-20
 
     - name: Build C++ libraries
-      run: touch suppression_mappings.txt && cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --target ton-index-postgres ton-index-postgres-migrate ton-index-clickhouse ton-trace-emulator ton-trace-task-emulator ton-index-go ton-streaming-go --parallel $(nproc)
+      run: touch suppression_mappings.txt && cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --target ion-index-postgres ion-index-postgres-migrate ion-index-clickhouse ion-trace-emulator ion-trace-task-emulator ion-index-go ion-streaming-go --parallel $(nproc)
 
     # - name: Test
     #   working-directory: ${{github.workspace}}/build
-    #   run: ./ton-index-worker/tondb-scanner/test-tondb
+    #   run: ./ion-index-worker/iondb-scanner/test-iondb

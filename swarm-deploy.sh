@@ -62,14 +62,14 @@ done
 
 set -- "${POSITIONAL_ARGS[@]}"
 
-# toncenter env: testnet, mainnet, stage
-export TONCENTER_ENV=${1:-mainnet}
-STACK_NAME="${TONCENTER_ENV}-indexer-cpp"
+# ice-blockchain env: testnet, mainnet, stage
+export IONCENTER_ENV=${1:-mainnet}
+STACK_NAME="${IONCENTER_ENV}-indexer-cpp"
 echo "Deploying stack: ${STACK_NAME}"
 
-if [ -f ".env.${TONCENTER_ENV}" ]; then
-    echo "Found env for ${TONCENTER_ENV}"
-    ENV_FILE=".env.${TONCENTER_ENV}"
+if [ -f ".env.${IONCENTER_ENV}" ]; then
+    echo "Found env for ${IONCENTER_ENV}"
+    ENV_FILE=".env.${IONCENTER_ENV}"
 elif [ -f ".env" ]; then
     echo "Found default .env"
     ENV_FILE=".env"
@@ -84,13 +84,13 @@ if [ ! -z "${ENV_FILE}" ]; then
 fi
 
 # check global network
-NETWORK_ID=$(docker network ls -f "name=toncenter-global" -q)
+NETWORK_ID=$(docker network ls -f "name=ice-blockchain-global" -q)
 
 if [[ -z "$NETWORK_ID" ]]; then
-    echo "Creating toncenter-global network"
-    NETWORK_ID=$(docker network create --attachable --driver=overlay toncenter-global)
+    echo "Creating ice-blockchain-global network"
+    NETWORK_ID=$(docker network create --attachable --driver=overlay ice-blockchain-global)
 fi
-echo "Network ID of toncenter-global: $NETWORK_ID"
+echo "Network ID of ice-blockchain-global: $NETWORK_ID"
 
 # build image
 if [[ $BUILD -eq "1" ]]; then

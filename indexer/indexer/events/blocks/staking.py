@@ -18,17 +18,17 @@ from indexer.events.blocks.messages.jettons import (
     JettonNotify,
 )
 from indexer.events.blocks.messages.staking import (
-    TONStakersDepositRequest,
-    TONStakersInitNFT,
-    TONStakersMintJettons,
-    TONStakersMintNFT,
-    TONStakersWithdrawRequest, TONStakersPoolWithdrawal, TONStakersDistributedAsset, TONStakersNftBurnNotification,
-    TONStakersNftBurn, NominatorPoolProcessWithdrawRequests,
+    IONStakersDepositRequest,
+    IONStakersInitNFT,
+    IONStakersMintJettons,
+    IONStakersMintNFT,
+    IONStakersWithdrawRequest, IONStakersPoolWithdrawal, IONStakersDistributedAsset, IONStakersNftBurnNotification,
+    IONStakersNftBurn, NominatorPoolProcessWithdrawRequests,
 )
 from indexer.events.blocks.nft import NftMintBlock
 from indexer.events.blocks.utils import AccountId, Amount
 from indexer.events.blocks.utils.block_utils import find_call_contract, get_labeled
-from indexer.events.blocks.utils.ton_utils import Asset
+from indexer.events.blocks.utils.ion_utils import Asset
 from indexer.events.blocks.jettons import JettonTransferBlock
 from indexer.events.blocks.messages.coffee import (
     CoffeeStakingDeposit,
@@ -41,7 +41,7 @@ from indexer.events.blocks.messages.coffee import (
 
 
 @dataclass
-class TONStakersDepositData:
+class IONStakersDepositData:
     source: AccountId
     user_jetton_wallet: AccountId
     pool: AccountId
@@ -50,36 +50,36 @@ class TONStakersDepositData:
     asset: Asset
 
 
-class TONStakersDepositBlock(Block):
-    data: TONStakersDepositData
+class IONStakersDepositBlock(Block):
+    data: IONStakersDepositData
 
-    def __init__(self, data: TONStakersDepositData):
-        super().__init__("tonstakers_deposit", [], data)
+    def __init__(self, data: IONStakersDepositData):
+        super().__init__("ionstakers_deposit", [], data)
 
     def __repr__(self):
-        return f"tonstakers_deposit {self.data}"
+        return f"ionstakers_deposit {self.data}"
 
 
 @dataclass
-class TONStakersWithdrawRequestData:
+class IONStakersWithdrawRequestData:
     source: AccountId
-    tsTON_wallet: AccountId
+    tsION_wallet: AccountId
     pool: AccountId
     tokens_burnt: Amount
     minted_nft: AccountId
     asset: Asset
 
-class TONStakersWithdrawRequestBlock(Block):
-    data: TONStakersWithdrawRequestData
+class IONStakersWithdrawRequestBlock(Block):
+    data: IONStakersWithdrawRequestData
 
     def __init__(self, data):
-        super().__init__("tonstakers_withdraw_request", [], data)
+        super().__init__("ionstakers_withdraw_request", [], data)
 
     def __repr__(self):
-        return f"tonstakers_withdraw_request {self.data}"
+        return f"ionstakers_withdraw_request {self.data}"
 
 @dataclass
-class TONStakersWithdrawData:
+class IONStakersWithdrawData:
     stake_holder: AccountId
     burnt_nft: AccountId | None
     pool: AccountId | None
@@ -87,14 +87,14 @@ class TONStakersWithdrawData:
     amount: Amount
     asset: Asset
 
-class TONStakersWithdrawBlock(Block):
-    data: TONStakersWithdrawData
+class IONStakersWithdrawBlock(Block):
+    data: IONStakersWithdrawData
 
     def __init__(self, data):
-        super().__init__("tonstakers_withdraw", [], data)
+        super().__init__("ionstakers_withdraw", [], data)
 
     def __repr__(self):
-        return f"tonstakers_withdraw {self.data}"
+        return f"ionstakers_withdraw {self.data}"
 
 @dataclass
 class NominatorPoolDepositData:
@@ -129,11 +129,11 @@ class NominatorPoolWithdrawRequestBlock(Block):
     def __repr__(self):
         return f"nominator_pool_withdraw_request {self.data}"
 
-class TONStakersDepositMatcher(BlockMatcher):
+class IONStakersDepositMatcher(BlockMatcher):
     def __init__(self):
         super().__init__(
             child_matcher=ContractMatcher(
-                opcode=TONStakersMintJettons.opcode,
+                opcode=IONStakersMintJettons.opcode,
                 optional=True,
                 child_matcher=labeled('transfer', ContractMatcher(
                     opcode=JettonInternalTransfer.opcode,
@@ -148,7 +148,7 @@ class TONStakersDepositMatcher(BlockMatcher):
     def test_self(self, block: Block):
         return (
             isinstance(block, CallContractBlock)
-            and block.opcode == TONStakersDepositRequest.opcode
+            and block.opcode == IONStakersDepositRequest.opcode
         )
 
     async def build_block(self, block: Block, other_blocks: list[Block]) -> list[Block]:
@@ -160,13 +160,13 @@ class TONStakersDepositMatcher(BlockMatcher):
         if transfer is None:
             failed = True
 
-        new_block = TONStakersDepositBlock(
-            data=TONStakersDepositData(
+        new_block = IONStakersDepositBlock(
+            data=IONStakersDepositData(
                 user_jetton_wallet=AccountId(transfer.get_message().destination) if not failed else None,
                 tokens_minted=Amount(transfer_message.amount) if not failed else None,
                 source=AccountId(msg.source),
                 pool=AccountId(msg.destination),
-                value=Amount(msg.value - 10**9),  # 1 TON deposit fee,
+                value=Amount(msg.value - 10**9),  # 1 ION deposit fee,
                 asset=Asset(False, transfer.get_message().source)   
             )
         )
@@ -175,17 +175,17 @@ class TONStakersDepositMatcher(BlockMatcher):
         return [new_block]
 
 
-class TONStakersWithdrawMatcher(BlockMatcher):
+class IONStakersWithdrawMatcher(BlockMatcher):
     def __init__(self):
 
         super().__init__(
             child_matcher=ContractMatcher(
                 opcode=JettonBurnNotification.opcode,
                 child_matcher=labeled('request', ContractMatcher(
-                    opcode=TONStakersWithdrawRequest.opcode,
+                    opcode=IONStakersWithdrawRequest.opcode,
                     child_matcher=OrMatcher([
-                        labeled('immediate_withdrawal', ContractMatcher(opcode=TONStakersPoolWithdrawal.opcode)),
-                        labeled('delayed_withdrawal', ContractMatcher(opcode=TONStakersMintNFT.opcode))
+                        labeled('immediate_withdrawal', ContractMatcher(opcode=IONStakersPoolWithdrawal.opcode)),
+                        labeled('delayed_withdrawal', ContractMatcher(opcode=IONStakersMintNFT.opcode))
                     ])
                 ))
             )
@@ -209,8 +209,8 @@ class TONStakersWithdrawMatcher(BlockMatcher):
 
         if immediate_withdrawal is not None:
             value = immediate_withdrawal.get_message().value - immediate_withdrawal.previous_block.get_message().value
-            new_block = TONStakersWithdrawBlock(
-                data=TONStakersWithdrawData(
+            new_block = IONStakersWithdrawBlock(
+                data=IONStakersWithdrawData(
                     stake_holder=AccountId(msg.source),
                     burnt_nft=None,
                     pool=AccountId(request.get_message().destination),
@@ -222,16 +222,16 @@ class TONStakersWithdrawMatcher(BlockMatcher):
         else:
             nft_mint_block = next((b for b in delayed_withdrawal.next_blocks if isinstance(b, NftMintBlock)), None)
             if nft_mint_block is None:
-                nft_mint_block = find_call_contract(delayed_withdrawal.next_blocks, TONStakersInitNFT.opcode)
+                nft_mint_block = find_call_contract(delayed_withdrawal.next_blocks, IONStakersInitNFT.opcode)
             minted_nft = None
             if nft_mint_block is not None:
                 minted_nft = AccountId(nft_mint_block.event_nodes[0].message.destination)
             else:
                 failed = True
-            new_block = TONStakersWithdrawRequestBlock(
-                data=TONStakersWithdrawRequestData(
+            new_block = IONStakersWithdrawRequestBlock(
+                data=IONStakersWithdrawRequestData(
                     source=AccountId(msg.source),
-                    tsTON_wallet=AccountId(msg.destination),
+                    tsION_wallet=AccountId(msg.destination),
                     pool=AccountId(request.get_message().destination),
                     tokens_burnt=Amount(burn_request_data.amount),
                     minted_nft=minted_nft,
@@ -242,26 +242,26 @@ class TONStakersWithdrawMatcher(BlockMatcher):
         new_block.merge_blocks([block] + other_blocks)
         return [new_block]
 
-class TONStakersDelayedWithdrawalMatcher(BlockMatcher):
+class IONStakersDelayedWithdrawalMatcher(BlockMatcher):
     def __init__(self):
         super().__init__(
             parent_matcher=ContractMatcher(
-                opcode=TONStakersNftBurnNotification.opcode,
+                opcode=IONStakersNftBurnNotification.opcode,
                 parent_matcher=ContractMatcher(
-                    opcode=TONStakersNftBurn.opcode,
+                    opcode=IONStakersNftBurn.opcode,
                 )
             )
         )
 
     def test_self(self, block: Block) -> bool:
-        return isinstance(block, CallContractBlock) and block.opcode == TONStakersDistributedAsset.opcode
+        return isinstance(block, CallContractBlock) and block.opcode == IONStakersDistributedAsset.opcode
 
     async def build_block(self, block: Block, other_blocks: list[Block]) -> list[Block]:
         notification = block.previous_block
-        notification_msg = TONStakersNftBurnNotification(notification.get_body())
+        notification_msg = IONStakersNftBurnNotification(notification.get_body())
 
-        new_block = TONStakersWithdrawBlock(
-            data=TONStakersWithdrawData(
+        new_block = IONStakersWithdrawBlock(
+            data=IONStakersWithdrawData(
                 stake_holder=AccountId(notification_msg.owner),
                 burnt_nft=AccountId(notification.get_message().source),
                 pool=self._try_find_pool_addr(notification),
@@ -276,9 +276,9 @@ class TONStakersDelayedWithdrawalMatcher(BlockMatcher):
     def _try_find_pool_addr(self, block: Block) -> AccountId | None:
         try:
             supported_opcodes = {
-                TONStakersNftBurnNotification.opcode,
-                TONStakersNftBurn.opcode,
-                TONStakersDistributedAsset.opcode
+                IONStakersNftBurnNotification.opcode,
+                IONStakersNftBurn.opcode,
+                IONStakersDistributedAsset.opcode
             }
 
             current_block = block
@@ -289,7 +289,7 @@ class TONStakersDelayedWithdrawalMatcher(BlockMatcher):
                 # if it is start asset distribution call
                 if isinstance(current_block, CallContractBlock) and current_block.opcode == 0x1140a64f:
                     return AccountId(current_block.get_message().source)
-                if isinstance(current_block, TONStakersWithdrawBlock):
+                if isinstance(current_block, IONStakersWithdrawBlock):
                     return current_block.data.pool
                 if isinstance(current_block, CallContractBlock) and current_block.opcode in supported_opcodes:
                     continue
@@ -340,10 +340,10 @@ class NominatorPoolWithdrawRequestMatcher(BlockMatcher):
         if "NominatorPool" not in interfaces:
             return []
 
-        ton_transfers = [b for b in block.next_blocks if isinstance(b, TonTransferBlock)]
+        ion_transfers = [b for b in block.next_blocks if isinstance(b, TonTransferBlock)]
         new_block = None
-        if len(ton_transfers) == 1:
-            transfer = ton_transfers[0]
+        if len(ion_transfers) == 1:
+            transfer = ion_transfers[0]
             extra_blocks.append(transfer)
             # immediate withdrawal
             if transfer.value > msg.value:
@@ -354,11 +354,11 @@ class NominatorPoolWithdrawRequestMatcher(BlockMatcher):
                         payout_amount=Amount(transfer.value)
                     )
                 )
-        elif len(ton_transfers) == 2:
+        elif len(ion_transfers) == 2:
             # immediate withdrawal
             # payout always the first by lt
-            payout = min(ton_transfers, key=lambda x: x.event_nodes[0].message.created_lt)
-            extra_blocks += ton_transfers
+            payout = min(ion_transfers, key=lambda x: x.event_nodes[0].message.created_lt)
+            extra_blocks += ion_transfers
             new_block = NominatorPoolWithdrawRequestBlock(
                 data=NominatorPoolWithdrawRequestData(
                     source=AccountId(msg.source),

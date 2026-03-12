@@ -9,27 +9,27 @@ RUN apt-get update -y \
                    automake libjemalloc-dev lsb-release software-properties-common gnupg \
                    autoconf libtool \
     && rm -rf /var/lib/{apt,dpkg,cache,log}/
-COPY ton-index-worker/external/ /app/external/
-COPY ton-index-worker/pgton/ /app/pgton/
-COPY ton-index-worker/celldb-migrate/ /app/celldb-migrate/
-COPY ton-index-worker/ton-index-clickhouse/ /app/ton-index-clickhouse/
-COPY ton-index-worker/ton-index-postgres/ /app/ton-index-postgres/
-COPY ton-index-worker/ton-integrity-checker/ /app/ton-integrity-checker/
-COPY ton-index-worker/ton-smc-scanner/ /app/ton-smc-scanner/
-COPY ton-index-worker/ton-trace-emulator/ /app/ton-trace-emulator/
-COPY ton-index-worker/ton-trace-task-emulator/ /app/ton-trace-task-emulator/
-COPY ton-index-worker/tondb-scanner/ /app/tondb-scanner/
-COPY ton-index-worker/ton-marker/ /app/ton-marker/
-COPY ton-index-worker/CMakeLists.txt /app/
+COPY ion-index-worker/external/ /app/external/
+COPY ion-index-worker/pgion/ /app/pgion/
+COPY ion-index-worker/celldb-migrate/ /app/celldb-migrate/
+COPY ion-index-worker/ion-index-clickhouse/ /app/ion-index-clickhouse/
+COPY ion-index-worker/ion-index-postgres/ /app/ion-index-postgres/
+COPY ion-index-worker/ion-integrity-checker/ /app/ion-integrity-checker/
+COPY ion-index-worker/ion-smc-scanner/ /app/ion-smc-scanner/
+COPY ion-index-worker/ion-trace-emulator/ /app/ion-trace-emulator/
+COPY ion-index-worker/ion-trace-task-emulator/ /app/ion-trace-task-emulator/
+COPY ion-index-worker/iondb-scanner/ /app/iondb-scanner/
+COPY ion-index-worker/ion-marker/ /app/ion-marker/
+COPY ion-index-worker/CMakeLists.txt /app/
 
 WORKDIR /app/build
 ENV CC=clang-20
 ENV CXX=clang++-20
-RUN touch /app/suppression_mappings.txt && cmake -DCMAKE_BUILD_TYPE=Release -DPORTABLE=1 .. && make -j$(nproc) ton-index-postgres ton-index-postgres-migrate ton-index-clickhouse ton-smc-scanner \
-     ton-integrity-checker ton-trace-emulator ton-trace-task-emulator ton-marker-cli ton-marker-core ton-marker
+RUN touch /app/suppression_mappings.txt && cmake -DCMAKE_BUILD_TYPE=Release -DION_USE_JEMALLOC=ON -DPORTABLE=1 .. && make -j$(nproc) ion-index-postgres ion-index-postgres-migrate ion-index-clickhouse ion-smc-scanner \
+     ion-integrity-checker ion-trace-emulator ion-trace-task-emulator ion-marker-cli ion-marker-core ion-marker
 
 
-## build index api service ton-index-go
+## build index api service ion-index-go
 FROM golang:trixie AS index-api-builder
 
 RUN apt-get update -y \
@@ -38,16 +38,16 @@ RUN apt-get update -y \
 
 RUN go install github.com/swaggo/swag/cmd/swag@latest
 
-ADD ton-index-go/index/ /go/app/index/
-ADD ton-index-go/main.go /go/app/main.go
-ADD ton-index-go/go.mod /go/app/go.mod
-ADD ton-index-go/go.sum /go/app/go.sum
-COPY --from=core-builder /app/build/ton-marker/libton-marker* /usr/lib/
-COPY --from=core-builder /app/ton-marker/src/wrapper.h /usr/local/include/wrapper.h
-RUN cd /go/app && swag init && go build -o ton-index-go ./main.go
+ADD ion-index-go/index/ /go/app/index/
+ADD ion-index-go/main.go /go/app/main.go
+ADD ion-index-go/go.mod /go/app/go.mod
+ADD ion-index-go/go.sum /go/app/go.sum
+COPY --from=core-builder /app/build/ion-marker/libion-marker* /usr/lib/
+COPY --from=core-builder /app/ion-marker/src/wrapper.h /usr/local/include/wrapper.h
+RUN cd /go/app && swag init && go build -o ion-index-go ./main.go
 
 
-## build emulate api service ton-emulate-go
+## build emulate api service ion-emulate-go
 FROM golang:trixie AS emulate-api-builder
 
 RUN apt-get update -y \
@@ -56,16 +56,16 @@ RUN apt-get update -y \
 
 RUN go install github.com/swaggo/swag/cmd/swag@latest
 
-ADD ton-index-go/ /go/ton-index-go/
-ADD ton-emulate-go/models/ /go/app/models/
-ADD ton-emulate-go/main.go /go/app/main.go
-ADD ton-emulate-go/go.mod /go/app/go.mod
-ADD ton-emulate-go/go.sum /go/app/go.sum
-COPY --from=core-builder /app/build/ton-marker/libton-marker* /usr/lib/
-COPY --from=core-builder /app/ton-marker/src/wrapper.h /usr/local/include/wrapper.h
-RUN cd /go/app && swag init && go build -o ton-emulate-go ./main.go
+ADD ion-index-go/ /go/ion-index-go/
+ADD ion-emulate-go/models/ /go/app/models/
+ADD ion-emulate-go/main.go /go/app/main.go
+ADD ion-emulate-go/go.mod /go/app/go.mod
+ADD ion-emulate-go/go.sum /go/app/go.sum
+COPY --from=core-builder /app/build/ion-marker/libion-marker* /usr/lib/
+COPY --from=core-builder /app/ion-marker/src/wrapper.h /usr/local/include/wrapper.h
+RUN cd /go/app && swag init && go build -o ion-emulate-go ./main.go
 
-## build metadata cache service ton-metadata-cache
+## build metadata cache service ion-metadata-cache
 FROM golang:trixie AS metadata-cache-builder
 
 RUN apt-get update -y \
@@ -74,33 +74,33 @@ RUN apt-get update -y \
 
 RUN go install github.com/swaggo/swag/cmd/swag@latest
 
-ADD ton-index-go/ /go/ton-index-go/
-ADD ton-metadata-cache/cache/ /go/app/cache/
-ADD ton-metadata-cache/repl/ /go/app/repl/
-ADD ton-metadata-cache/models/ /go/app/models/
-ADD ton-metadata-cache/loader/ /go/app/loader/
-ADD ton-metadata-cache/main.go /go/app/main.go
-ADD ton-metadata-cache/db.go /go/app/db.go
-ADD ton-metadata-cache/handler.go /go/app/handler.go
-ADD ton-metadata-cache/go.mod /go/app/go.mod
-ADD ton-metadata-cache/go.sum /go/app/go.sum
-COPY --from=core-builder /app/build/ton-marker/libton-marker* /usr/lib/
-COPY --from=core-builder /app/ton-marker/src/wrapper.h /usr/local/include/wrapper.h
-RUN cd /go/app && go build -o ton-metadata-cache .
+ADD ion-index-go/ /go/ion-index-go/
+ADD ion-metadata-cache/cache/ /go/app/cache/
+ADD ion-metadata-cache/repl/ /go/app/repl/
+ADD ion-metadata-cache/models/ /go/app/models/
+ADD ion-metadata-cache/loader/ /go/app/loader/
+ADD ion-metadata-cache/main.go /go/app/main.go
+ADD ion-metadata-cache/db.go /go/app/db.go
+ADD ion-metadata-cache/handler.go /go/app/handler.go
+ADD ion-metadata-cache/go.mod /go/app/go.mod
+ADD ion-metadata-cache/go.sum /go/app/go.sum
+COPY --from=core-builder /app/build/ion-marker/libion-marker* /usr/lib/
+COPY --from=core-builder /app/ion-marker/src/wrapper.h /usr/local/include/wrapper.h
+RUN cd /go/app && go build -o ion-metadata-cache .
 
 
-## build metadata fetcher service ton-metadata-fetcher
+## build metadata fetcher service ion-metadata-fetcher
 FROM golang:trixie AS metadata-fetcher-builder
 
-ADD ton-metadata-fetcher/images.go /go/app/images.go
-ADD ton-metadata-fetcher/ipfs.go /go/app/ipfs.go
-ADD ton-metadata-fetcher/main.go /go/app/main.go
-ADD ton-metadata-fetcher/overrides.go /go/app/overrides.go
-ADD ton-metadata-fetcher/go.mod /go/app/go.mod
-ADD ton-metadata-fetcher/go.sum /go/app/go.sum
+ADD ion-metadata-fetcher/images.go /go/app/images.go
+ADD ion-metadata-fetcher/ipfs.go /go/app/ipfs.go
+ADD ion-metadata-fetcher/main.go /go/app/main.go
+ADD ion-metadata-fetcher/overrides.go /go/app/overrides.go
+ADD ion-metadata-fetcher/go.mod /go/app/go.mod
+ADD ion-metadata-fetcher/go.sum /go/app/go.sum
 
 WORKDIR /go/app
-RUN go build -o ton-metadata-fetcher ./*.go
+RUN go build -o ion-metadata-fetcher ./*.go
 
 
 # IMAGE stages
@@ -111,16 +111,16 @@ RUN apt-get update -y \
     && apt install -y dnsutils libpq5 libsecp256k1-1 libsodium23 libhiredis1.1.0 \
     && rm -rf /var/lib/{apt,dpkg,cache,log}/
 
-COPY ton-index-worker/scripts/entrypoint.sh /app/entrypoint.sh
-COPY --from=core-builder /app/build/ton-index-postgres/ton-index-postgres /usr/bin/ton-index-postgres
-COPY --from=core-builder /app/build/ton-index-postgres/ton-index-postgres-migrate /usr/bin/ton-index-postgres-migrate
-COPY --from=core-builder /app/build/ton-index-clickhouse/ton-index-clickhouse /usr/bin/ton-index-clickhouse
-COPY --from=core-builder /app/build/ton-smc-scanner/ton-smc-scanner /usr/bin/ton-smc-scanner
-COPY --from=core-builder /app/build/ton-integrity-checker/ton-integrity-checker /usr/bin/ton-integrity-checker
-COPY --from=core-builder /app/build/ton-trace-emulator/ton-trace-emulator /usr/bin/ton-trace-emulator
-COPY --from=core-builder /app/build/ton-trace-task-emulator/ton-trace-task-emulator /usr/bin/ton-trace-task-emulator
-COPY --from=core-builder /app/build/ton-marker/libton-marker* /usr/lib/
-COPY --from=core-builder /app/build/ton-marker/ton-marker-cli /usr/bin/ton-marker-cli
+COPY ion-index-worker/scripts/entrypoint.sh /app/entrypoint.sh
+COPY --from=core-builder /app/build/ion-index-postgres/ion-index-postgres /usr/bin/ion-index-postgres
+COPY --from=core-builder /app/build/ion-index-postgres/ion-index-postgres-migrate /usr/bin/ion-index-postgres-migrate
+COPY --from=core-builder /app/build/ion-index-clickhouse/ion-index-clickhouse /usr/bin/ion-index-clickhouse
+COPY --from=core-builder /app/build/ion-smc-scanner/ion-smc-scanner /usr/bin/ion-smc-scanner
+COPY --from=core-builder /app/build/ion-integrity-checker/ion-integrity-checker /usr/bin/ion-integrity-checker
+COPY --from=core-builder /app/build/ion-trace-emulator/ion-trace-emulator /usr/bin/ion-trace-emulator
+COPY --from=core-builder /app/build/ion-trace-task-emulator/ion-trace-task-emulator /usr/bin/ion-trace-task-emulator
+COPY --from=core-builder /app/build/ion-marker/libion-marker* /usr/lib/
+COPY --from=core-builder /app/build/ion-marker/ion-marker-cli /usr/bin/ion-marker-cli
 
 ENTRYPOINT [ "/app/entrypoint.sh" ]
 
@@ -131,9 +131,9 @@ RUN apt-get update \
     && apt install --yes dnsutils libpq5 libsecp256k1-1 libsodium23 libhiredis1.1.0 \
     && rm -rf /var/lib/{apt,dpkg,cache,log}/
 
-COPY --from=core-builder /app/build/ton-marker/libton-marker* /usr/lib/
-COPY --from=index-api-builder /go/app/ton-index-go /usr/local/bin/ton-index-go
-COPY ton-index-go/entrypoint.sh /app/entrypoint.sh
+COPY --from=core-builder /app/build/ion-marker/libion-marker* /usr/lib/
+COPY --from=index-api-builder /go/app/ion-index-go /usr/local/bin/ion-index-go
+COPY ion-index-go/entrypoint.sh /app/entrypoint.sh
 
 ENTRYPOINT [ "/app/entrypoint.sh" ]
 
@@ -144,9 +144,9 @@ RUN apt-get update \
     && apt install --yes curl dnsutils libpq5 libsecp256k1-1 libsodium23 libhiredis1.1.0 \
     && rm -rf /var/lib/{apt,dpkg,cache,log}/
 
-COPY --from=core-builder /app/build/ton-marker/libton-marker* /usr/lib/
-COPY --from=emulate-api-builder /go/app/ton-emulate-go /usr/local/bin/ton-emulate-go
-COPY ton-emulate-go/entrypoint.sh /app/entrypoint.sh
+COPY --from=core-builder /app/build/ion-marker/libion-marker* /usr/lib/
+COPY --from=emulate-api-builder /go/app/ion-emulate-go /usr/local/bin/ion-emulate-go
+COPY ion-emulate-go/entrypoint.sh /app/entrypoint.sh
 
 ENTRYPOINT [ "/app/entrypoint.sh" ]
 
@@ -156,9 +156,9 @@ RUN apt-get update \
     && apt install --yes curl dnsutils libpq5 libsecp256k1-1 libsodium23 libhiredis1.1.0 \
     && rm -rf /var/lib/{apt,dpkg,cache,log}/
 
-COPY --from=core-builder /app/build/ton-marker/libton-marker* /usr/lib/
-COPY --from=metadata-cache-builder /go/app/ton-metadata-cache /usr/local/bin/ton-metadata-cache
-COPY ton-metadata-cache/entrypoint.sh /app/entrypoint.sh
+COPY --from=core-builder /app/build/ion-marker/libion-marker* /usr/lib/
+COPY --from=metadata-cache-builder /go/app/ion-metadata-cache /usr/local/bin/ion-metadata-cache
+COPY ion-metadata-cache/entrypoint.sh /app/entrypoint.sh
 
 ENTRYPOINT [ "/app/entrypoint.sh" ]
 
@@ -167,9 +167,9 @@ ENTRYPOINT [ "/app/entrypoint.sh" ]
 FROM ubuntu:24.04 AS metadata-fetcher
 RUN apt-get update && apt install --yes curl && rm -rf /var/lib/apt/lists/*
 
-COPY --from=metadata-fetcher-builder /go/app/ton-metadata-fetcher /usr/local/bin/ton-metadata-fetcher
-COPY ton-metadata-fetcher/entrypoint.sh /app/entrypoint.sh
-COPY ton-metadata-fetcher/metadata_overrides.json /app/metadata_overrides.json
+COPY --from=metadata-fetcher-builder /go/app/ion-metadata-fetcher /usr/local/bin/ion-metadata-fetcher
+COPY ion-metadata-fetcher/entrypoint.sh /app/entrypoint.sh
+COPY ion-metadata-fetcher/metadata_overrides.json /app/metadata_overrides.json
 
 ENTRYPOINT [ "/app/entrypoint.sh" ]
 

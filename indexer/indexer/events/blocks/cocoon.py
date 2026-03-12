@@ -5,7 +5,7 @@ from indexer.events.blocks.basic_blocks import Block, CallContractBlock
 from indexer.events.blocks.basic_matchers import BlockMatcher, ContractMatcher
 from indexer.events.blocks.labels import labeled
 from indexer.events.blocks.utils.block_utils import find_call_contract, get_labeled
-from indexer.events.blocks.utils.ton_utils import AccountId, Amount
+from indexer.events.blocks.utils.ion_utils import AccountId, Amount
 from indexer.events.blocks.messages.cocoon import (
     CocoonChargePayload,
     CocoonClientProxyRefundGranted,

@@ -286,7 +286,7 @@ class LayerZeroMdGuid:
 #     );
 #     return true;
 # }
-# ;; @param donationNanos: the amount of TON that the sender intended to be
+# ;; @param donationNanos: the amount of ION that the sender intended to be
 # ;; withheld within our contract
 # ;; @info baseHandler::refund_addr is the last known "origin" of a message
 # ;; flow, and is used to refund the sender if the handler does not
@@ -1261,15 +1261,15 @@ class WorkerCallViaProxy:
 
 class WorkerClaimTon:
     """
-    Original: Worker::OP::CLAIM_TON
-    String: "Worker::OP::CLAIM_TON"
+    Original: Worker::OP::CLAIM_ION
+    String: "Worker::OP::CLAIM_ION"
     """
     opcode = 0x217607d4
 
 class WorkerClaimTonFromProxy:
     """
-    Original: Worker::OP::CLAIM_TON_FROM_PROXY
-    String: "Worker::OP::CLAIM_TON_FROM_PROXY"
+    Original: Worker::OP::CLAIM_ION_FROM_PROXY
+    String: "Worker::OP::CLAIM_ION_FROM_PROXY"
     """
     opcode = 0xce435c07
 
@@ -1361,9 +1361,9 @@ class LzReceivePrepareParser:
     
     def __init__(self, slice: Slice):
         # Based on lzReceivePrepare handler
-        # Receives LzReceivePrepare(nonce, nanotons)
+        # Receives LzReceivePrepare(nonce, nanoions)
         self.nonce = slice.load_uint(64)
-        self.nanotons = slice.load_coins()
+        self.nanoions = slice.load_coins()
 
 class LzReceiveLockParser:
     """Parser for Channel::OP::LZ_RECEIVE_LOCK message"""

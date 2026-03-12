@@ -18,7 +18,7 @@ from indexer.events.blocks.messages.jettons import (
 )
 from indexer.events.blocks.utils import AccountId, Amount
 from indexer.events.blocks.utils.block_utils import get_labeled
-from indexer.events.blocks.utils.ton_utils import Asset
+from indexer.events.blocks.utils.ion_utils import Asset
 from indexer.events.blocks.jettons import JettonTransferBlock
 
 

@@ -41,14 +41,14 @@ from indexer.events.blocks.messages.evaa import (
 )
 from indexer.events.blocks.utils import AccountId, Asset
 from indexer.events.blocks.utils.block_utils import get_labeled
-from indexer.events.blocks.utils.ton_utils import Amount
+from indexer.events.blocks.utils.ion_utils import Amount
 from indexer.core.database import Action
 
 logger = logging.getLogger('actions-indexer')
 logger.debug('Loading evaa.py')
 
 
-TON_ASSET_ID = 0x1A4219FE5E60D63AF2A3CC7DCE6FEC69B45C6B5718497A6148E7C232AC87BD8A
+ION_ASSET_ID = 0x1A4219FE5E60D63AF2A3CC7DCE6FEC69B45C6B5718497A6148E7C232AC87BD8A
 
 evaa_action_comment_matcher = GenericMatcher(
     lambda block: isinstance(block, TonTransferBlock)
@@ -88,7 +88,7 @@ class EvaaContractWithHeaderMatcher(ContractMatcher):
             # logger.error(e, exc_info=True)
             return False
 
-# ------------------------- Supply (ton and jetton) -------------------------
+# ------------------------- Supply (ion and jetton) -------------------------
 
 @dataclass
 class EvaaSupplyData:
@@ -97,8 +97,8 @@ class EvaaSupplyData:
     recipient_contract: AccountId
     amount: int
     is_success: bool
-    is_ton: bool
-    asset_id: int  # sha256('TON') for ton
+    is_ion: bool
+    asset_id: int  # sha256('ION') for ion
     sender_jetton_wallet: AccountId | None = None
     recipient_jetton_wallet: AccountId | None = None
     master_jetton_wallet: AccountId | None = None
@@ -158,10 +158,10 @@ class EvaaSupplyBlockMatcher(BlockMatcher):
         super().__init__(child_matcher=user_matcher)
 
     def test_self(self, block: Block):
-        # check if this is either supply_master call (for ton)
+        # check if this is either supply_master call (for ion)
         # or jetton transfer with supply_master payload (for jetton)
 
-        # ton case
+        # ion case
         if (
             isinstance(block, CallContractBlock)
             and block.opcode == EvaaSupplyMaster.opcode
@@ -185,7 +185,7 @@ class EvaaSupplyBlockMatcher(BlockMatcher):
         return False
 
     async def build_block(self, block: Block, other_blocks: list[Block]) -> list[Block]:
-        is_ton = isinstance(block, CallContractBlock)
+        is_ion = isinstance(block, CallContractBlock)
         sender = None
         amount = 0
         sender_jetton_wallet = None
@@ -193,8 +193,8 @@ class EvaaSupplyBlockMatcher(BlockMatcher):
         recipient_jetton_wallet = None
         master_jetton_wallet = None
         master = None
-        asset = Asset(is_ton=True)
-        if is_ton:
+        asset = Asset(is_ion=True)
+        if is_ion:
             msg = block.get_message()
             sender = AccountId(msg.source)
 
@@ -261,7 +261,7 @@ class EvaaSupplyBlockMatcher(BlockMatcher):
                     recipient_contract=recipient_contract,
                     amount=amount,
                     is_success=True,
-                    is_ton=is_ton,
+                    is_ion=is_ion,
                     asset_id=asset_id,
                     recipient_jetton_wallet=recipient_jetton_wallet,
                     master_jetton_wallet=master_jetton_wallet,
@@ -287,7 +287,7 @@ class EvaaSupplyBlockMatcher(BlockMatcher):
                     recipient_contract=recipient_contract,
                     amount=amount,
                     is_success=False,
-                    is_ton=is_ton,
+                    is_ion=is_ion,
                     asset_id=asset_id,
                     recipient_jetton_wallet=recipient_jetton_wallet,
                     master_jetton_wallet=master_jetton_wallet,
@@ -309,7 +309,7 @@ class EvaaSupplyBlockMatcher(BlockMatcher):
         return []
 
 
-# ------------------------- Withdraw (ton and jetton) -------------------------
+# ------------------------- Withdraw (ion and jetton) -------------------------
 
 
 @dataclass
@@ -320,7 +320,7 @@ class EvaaWithdrawData:
     asset_id: int
     amount: int
     is_success: bool
-    is_ton: bool
+    is_ion: bool
     recipient_jetton_wallet: AccountId | None = None
     master_jetton_wallet: AccountId | None = None
     fail_reason: str | None = None
@@ -348,9 +348,9 @@ class EvaaWithdrawBlockMatcher(BlockMatcher):
             ),
         )
 
-        # for successful ton withdrawals
-        ton_payout_matcher = labeled(
-            "ton_payout",
+        # for successful ion withdrawals
+        ion_payout_matcher = labeled(
+            "ion_payout",
             ContractMatcher(
                 opcode=EvaaWithdrawSuccess.opcode,
                 optional=False,
@@ -358,7 +358,7 @@ class EvaaWithdrawBlockMatcher(BlockMatcher):
             ),
         )
 
-        payout_matcher = ExclusiveOrMatcher([jetton_payout_matcher, ton_payout_matcher])
+        payout_matcher = ExclusiveOrMatcher([jetton_payout_matcher, ion_payout_matcher])
 
         # opcode used for both payout and user smc update
         success_matcher = labeled(
@@ -366,13 +366,13 @@ class EvaaWithdrawBlockMatcher(BlockMatcher):
             EvaaContractWithHeaderMatcher(
                 opcode=EvaaWithdrawSuccess.opcode,
                 optional=False,
-                child_matcher=BlockTypeMatcher(block_type="ton_transfer")
+                child_matcher=BlockTypeMatcher(block_type="ion_transfer")
             ),
         )
 
         # response from user contract to master may end with success or fail
         # if success, it sends money to user and updates data
-        # if fail, it unlocks, reverts data and returns ton
+        # if fail, it unlocks, reverts data and returns ion
         withdraw_collateralized_success_matcher = labeled(
             "withdraw_collateralized_success",
             ContractMatcher(
@@ -440,7 +440,7 @@ class EvaaWithdrawBlockMatcher(BlockMatcher):
         super().__init__(child_matcher=user_matcher)
 
     def test_self(self, block: Block):
-        # check if this is either withdraw_master call (for ton)
+        # check if this is either withdraw_master call (for ion)
         # or jetton transfer with withdraw_master payload (for jetton)
         return (
             isinstance(block, CallContractBlock)
@@ -458,7 +458,7 @@ class EvaaWithdrawBlockMatcher(BlockMatcher):
         desired_amount = withdraw_master_data.amount
         recipient = AccountId(withdraw_master_data.recipient_address)
 
-        is_ton = asset_id == TON_ASSET_ID
+        is_ion = asset_id == ION_ASSET_ID
         recipient_jetton_wallet = None
         master_jetton_wallet = None
 
@@ -479,10 +479,10 @@ class EvaaWithdrawBlockMatcher(BlockMatcher):
             )
             amount = collateralized_data.withdraw_amount_current
 
-            if is_ton:
-                asset = Asset(is_ton=True)
-                ton_payout = get_labeled("ton_payout", other_blocks, CallContractBlock)
-                if not ton_payout:
+            if is_ion:
+                asset = Asset(is_ion=True)
+                ion_payout = get_labeled("ion_payout", other_blocks, CallContractBlock)
+                if not ion_payout:
                     return []
             else:
                 jetton_payout = get_labeled(
@@ -509,7 +509,7 @@ class EvaaWithdrawBlockMatcher(BlockMatcher):
                     asset_id=asset_id,
                     amount=amount,
                     is_success=True,
-                    is_ton=is_ton,
+                    is_ion=is_ion,
                     recipient_jetton_wallet=recipient_jetton_wallet,
                     master_jetton_wallet=master_jetton_wallet,
                     master=master,
@@ -532,7 +532,7 @@ class EvaaWithdrawBlockMatcher(BlockMatcher):
                     asset_id=asset_id,
                     amount=desired_amount,
                     is_success=False,
-                    is_ton=is_ton,
+                    is_ion=is_ion,
                     fail_reason="withdraw_no_funds_excess",
                     master=master
                 )
@@ -554,7 +554,7 @@ class EvaaWithdrawBlockMatcher(BlockMatcher):
                     asset_id=asset_id,
                     amount=desired_amount,
                     is_success=False,
-                    is_ton=is_ton,
+                    is_ion=is_ion,
                     fail_reason=error_data.reason,
                     master=master
                 )
@@ -598,7 +598,7 @@ class EvaaLiquidateBlockMatcher(BlockMatcher):
             "immediate_fail_refund",
             ExclusiveOrMatcher(
                 [
-                    # for ton - just bounce original transaction
+                    # for ion - just bounce original transaction
                     GenericMatcher(
                         test_self_func=lambda block: isinstance(
                             block, CallContractBlock
@@ -618,7 +618,7 @@ class EvaaLiquidateBlockMatcher(BlockMatcher):
             "finish_with_tokens_and_report",
             ExclusiveOrMatcher(
                 [
-                    # for ton - call contract with success_report or fail_report
+                    # for ion - call contract with success_report or fail_report
                     GenericMatcher(
                         test_self_func=lambda block: (
                             isinstance(block, CallContractBlock)
@@ -701,7 +701,7 @@ class EvaaLiquidateBlockMatcher(BlockMatcher):
         )
 
     def test_self(self, block: Block):
-        # check if this is either liquidate_master call (for ton)
+        # check if this is either liquidate_master call (for ion)
         # or jetton transfer with liquidate_master payload (for jetton)
         if (
             isinstance(block, CallContractBlock)
@@ -724,18 +724,18 @@ class EvaaLiquidateBlockMatcher(BlockMatcher):
         return False
 
     async def build_block(self, block: Block, other_blocks: list[Block]) -> list[Block]:
-        is_ton_liquidation = isinstance(block, CallContractBlock)
+        is_ion_liquidation = isinstance(block, CallContractBlock)
 
         liquidator = None
         liquidate_master_data = None
         transferred_asset_id = None
         liquidate_amount = None
 
-        if is_ton_liquidation:
+        if is_ion_liquidation:
             msg = block.get_message()
             liquidator = AccountId(msg.source)
             liquidate_master_data = EvaaLiquidateMaster(block.get_body())
-            transferred_asset_id = TON_ASSET_ID
+            transferred_asset_id = ION_ASSET_ID
         else:
             liquidator = AccountId(block.data["sender"])
             liquidate_amount = block.data["amount"].value

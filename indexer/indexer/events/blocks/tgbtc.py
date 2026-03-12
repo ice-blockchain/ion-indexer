@@ -188,7 +188,7 @@ class TgBTCBurnBlockMatcher(BlockMatcher):
                 optional=True,
                 children_matchers=[
                     ContractMatcher(opcode=0x1A84C0E0, optional=True),
-                    BlockTypeMatcher("ton_transfer", optional=True),
+                    BlockTypeMatcher("ion_transfer", optional=True),
                 ],
             ),
         ]
@@ -290,7 +290,7 @@ class TgBTCNewKeyBlockMatcher(BlockMatcher):
                     optional=True,
                     children_matchers=[
                         ContractMatcher(opcode=0x1A84C0E0, optional=True),
-                        BlockTypeMatcher("ton_transfer", optional=True),
+                        BlockTypeMatcher("ion_transfer", optional=True),
                     ],
                 ),
             ],

@@ -14,7 +14,7 @@ def load_asset(slice: Slice) -> Asset:
         return Asset(False, Address((wc, account_id)))
 
 
-class DedustDepositTONToVault:
+class DedustDepositIONToVault:
     opcode = 0xD55E4686
 
     # _ min_lp_amount:Coins asset0_target_balance:Coins asset1_target_balance:Coins = DedustDepositLiquidityParams;
@@ -96,7 +96,7 @@ class DedustReturnExcessFromVault:
     opcode = 0x6B0B787F
 
 
-class StonfiV2ProvideLiquidity:
+class IonDexV2ProvideLiquidity:
     opcode = 0x37c096df
     def __init__(self, body: Slice):
         body.load_uint(32)

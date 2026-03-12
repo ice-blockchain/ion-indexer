@@ -1,23 +1,23 @@
-# TON Indexer
+# ION Indexer
 
 > [!NOTE]
 > Be careful upgrading the indexer. Only patch-level upgrades are supported. Major and minor version changes require a new database.
 
-TON Indexer is a robust indexing system that extracts, transforms, and loads data from the TON blockchain into a PostgreSQL database. It enables efficient querying of blocks, transactions, messages, account states, NFTs, Jettons and Actions through a powerful API.
+ION Indexer is a robust indexing system that extracts, transforms, and loads data from the ION blockchain into a PostgreSQL database. It enables efficient querying of blocks, transactions, messages, account states, NFTs, Jettons and Actions through a powerful API.
 
-TON nodes store data in a RocksDB key-value store optimized for performance in specific use cases. However, RocksDB isn't well-suited for complex queries. TON Indexer bridges this gap by:
-- Reading raw blockchain data from a local TON node's RocksDB.
+ION nodes store data in a RocksDB key-value store optimized for performance in specific use cases. However, RocksDB isn't well-suited for complex queries. ION Indexer bridges this gap by:
+- Reading raw blockchain data from a local ION node's RocksDB.
 - Parsing and transforming the data.
 - Classifying transaction chains (traces) into Actions (such as DEX swaps, Multisig interactions and others).
 - Persisting the data in a PostgreSQL database.
 
 ## Architecture Overview
 
-TON Indexer stack consists of following services:
+ION Indexer stack consists of following services:
 1. `postgres` - PostgreSQL server for primary storage for indexed blockchain data.
 2. `index-api` - [Fiber](https://github.com/gofiber/fiber)-based server with convenient endpoints to access the database with REST API.
 3. `event-classifier` - Actions classification service.
-4. `index-worker` - TON Index worker to read and parse data from TON node database. Must run on the same machine as a functioning TON full node.
+4. `index-worker` - ION Index worker to read and parse data from ION node database. Must run on the same machine as a functioning ION full node.
 5. `run-migrations` -  Initializes the database schema and runs all required migrations.
 6. `metadata-fetcher` - Indexes offchain metadata for Jettons and NFTs, optional service.
 7. `imgproxy` - Proxies images from Jetton and NFT metadata, optional service.
@@ -33,7 +33,7 @@ TON Indexer stack consists of following services:
 ### Prerequisites
 
 - **Docker & Docker Compose v2** - [Installation guide](https://docs.docker.com/engine/install/)
-- **Running TON Full Node** - Follow the [official TON documentation](https://docs.ton.org/participate/run-nodes/full-node)
+- **Running ION Full Node** - Follow the [official ION documentation](https://docs.ion.org/participate/run-nodes/full-node)
 - **Recommended hardware:** 
   * Database: 8 cores CPU, 64 GB RAM, 4 TB NVME SSD
   * Worker: 16 cores CPU, 128 GB RAM, 1 TB NVME SSD
@@ -41,12 +41,12 @@ TON Indexer stack consists of following services:
 ### Setup Instructions
 
 ```bash
-git clone --recursive --branch master https://github.com/toncenter/ton-indexer.git
-cd ton-indexer
+git clone --recursive --branch master https://github.com/ice-blockchain/ion-indexer.git
+cd ion-indexer
 
 # Copy and configure the environment file
 cp .env.example .env
-nano .env   # Set TON_WORKER_FROM and other variables as needed
+nano .env   # Set ION_WORKER_FROM and other variables as needed
 
 # Set PostgreSQL password
 mkdir private
@@ -56,7 +56,7 @@ echo -n "My53curePwD" > private/postgres_password
 docker compose pull
 docker compose up -d
 
-# To run ton-indexer with metadata services
+# To run ion-indexer with metadata services
 docker compose --profile metadata pull
 docker compose --profile metadata up -d
 
@@ -71,7 +71,7 @@ Once the stack is running, the REST API and interactive Swagger are available at
 
 # FAQ
 
-## How to point TON Index worker to existing PostgreSQL instance
+## How to point ION Index worker to existing PostgreSQL instance
 
 1. Stop and remove the bundled PostgreSQL container (add `-v` flag to remove the volume as well):
 
@@ -89,7 +89,7 @@ Once the stack is running, the REST API and interactive Swagger are available at
    docker compose up -d run-migrations index-worker index-api event-classifier event-cache
    ```
 
-## How to run TON Index worker independently
+## How to run ION Index worker independently
 
 When using a remote PostgreSQL instance, you can run the index worker independently without service dependencies:
 
@@ -123,4 +123,4 @@ This is useful when you want to:
 
 # License
 
-TON Indexer is licensed under the **MIT License**.
+ION Indexer is licensed under the **MIT License**.

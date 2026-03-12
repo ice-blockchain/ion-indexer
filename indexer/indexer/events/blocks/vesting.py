@@ -17,7 +17,7 @@ from indexer.events.blocks.messages.vesting import (
 )
 from indexer.events.blocks.utils import AccountId
 from indexer.events.blocks.utils.block_utils import get_labeled
-from indexer.events.blocks.utils.ton_utils import Amount
+from indexer.events.blocks.utils.ion_utils import Amount
 
 
 @dataclass

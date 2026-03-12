@@ -1,17 +1,17 @@
-[submodule "external/ton"]
-	path = ton-index-worker/external/ton
-	url = https://github.com/dungeon-master-666/ton
-	branch = ton-indexer
+[submodule "external/ion"]
+	path = ion-index-worker/external/ion
+	url = https://github.com/ice-blockchain/ion
+	branch = ion-indexer
 [submodule "external/libpqxx"]
-	path = ton-index-worker/external/libpqxx
+	path = ion-index-worker/external/libpqxx
 	url = https://github.com/jtv/libpqxx.git
 [submodule "external/clickhouse-cpp"]
-	path = ton-index-worker/external/clickhouse-cpp
+	path = ion-index-worker/external/clickhouse-cpp
 	url = https://github.com/kdimentionaltree/clickhouse-cpp.git
-  branch = absl-fix
+	branch = absl-fix
 [submodule "external/redis-plus-plus"]
-	path = ton-index-worker/external/redis-plus-plus
+	path = ion-index-worker/external/redis-plus-plus
 	url = https://github.com/sewenew/redis-plus-plus.git
 [submodule "external/msgpack-c"]
-	path = ton-index-worker/external/msgpack-c
+	path = ion-index-worker/external/msgpack-c
 	url = https://github.com/msgpack/msgpack-c

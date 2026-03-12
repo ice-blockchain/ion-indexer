@@ -13,9 +13,9 @@ import (
 )
 
 var prepare_sql string = `
-create table if not exists  broken_traces_roots(tx_hash tonhash, ignore bool default false, primary key (tx_hash));
+create table if not exists  broken_traces_roots(tx_hash ionhash, ignore bool default false, primary key (tx_hash));
 
-create or replace function delete_broken_trace(my_trace_id tonhash) returns tonhash
+create or replace function delete_broken_trace(my_trace_id ionhash) returns ionhash
     language plpgsql
 as
 $$
@@ -30,15 +30,15 @@ begin
 end;
 $$;
 
-create or replace function trace_get_root(transaction_hash tonhash) returns tonhash
+create or replace function trace_get_root(transaction_hash ionhash) returns ionhash
     parallel safe
     language plpgsql
 as
 $$
 declare
-    parent tonhash;
-    current tonhash;
-    msg tonhash;
+    parent ionhash;
+    current ionhash;
+    msg ionhash;
 begin
     current := transaction_hash;
     parent := transaction_hash;
@@ -51,7 +51,7 @@ begin
 end;
 $$;
 
-create or replace function trace_get_transactions(root_tx_hash tonhash) returns tonhash[]
+create or replace function trace_get_transactions(root_tx_hash ionhash) returns ionhash[]
     parallel safe
     language sql
 as
@@ -69,15 +69,15 @@ with recursive cte as (
 select array_agg(cte.tx_hash) from cte;
 $$;
 
-create or replace function rebuild_trace(root_tx_hash tonhash) returns tonhash
+create or replace function rebuild_trace(root_tx_hash ionhash) returns ionhash
     language plpgsql
 as
 $$
 declare
-    new_trace_id tonhash;
+    new_trace_id ionhash;
     flag bool;
-    txs tonhash[];
-    new_trace_external_hash tonhash;
+    txs ionhash[];
+    new_trace_external_hash ionhash;
     new_trace_start_seqno int;
     new_trace_start_lt bigint;
     new_trace_start_utime int;

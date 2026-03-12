@@ -1,6 +1,6 @@
 ---
-- name: Check TON validator time drift
-  hosts: "{{ stack_name }}__ton_nodes"
+- name: Check ION validator time drift
+  hosts: "{{ stack_name }}__ion_nodes"
   gather_facts: no
 
   tasks:
@@ -10,10 +10,10 @@
         set -o pipefail
 
         height=$(
-          /usr/bin/ton/validator-engine-console/validator-engine-console \
-            --address 127.0.0.1:$(jq -r '.control[0].port' /var/ton-work/db/config.json) \
-            --key /var/ton-work/keys/client \
-            --pub /var/ton-work/keys/server.pub \
+          /usr/bin/ion/validator-engine-console/validator-engine-console \
+            --address 127.0.0.1:$(jq -r '.control[0].port' /var/ion-work/db/config.json) \
+            --key /var/ion-work/keys/client \
+            --pub /var/ion-work/keys/server.pub \
             -c getstats
         )
 

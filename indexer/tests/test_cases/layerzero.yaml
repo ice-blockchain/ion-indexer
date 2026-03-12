@@ -52,7 +52,7 @@ cases:
             guid: "0xa0b6fa1485a8e904d1bf5c702f99936ceb8ab32730b2cd501071dc92456da7cb"
             message: "0x00020000000000000000000000000378cca455f3befef687f9f7668b13eaa03f007c000000000000270d"
 
-  LayerZero send some test msg from ton to ton lol:
+  LayerZero send some test msg from ion to ion lol:
     trace-id: 0_AQj88LwG2cEpyjulN9yyJWzx8_ymJMizzoR_FfDzU=
     expected-actions:
       - type: layerzero_send
@@ -96,7 +96,7 @@ cases:
               guid: "0xe7db0b36b8b81bcd2a22d087d69dd4ec7640c2bb358092ac9e7306b9a77601a9"
               message: "0x010000768700000000"
 
-  LayerZero commit packet from eth to ton:
+  LayerZero commit packet from eth to ion:
     trace-id: 12Jtky5tD9ra9tUPUSSGXkMRySu85MpmdVFImk3jCRA=
     expected-actions:
       - type: layerzero_commit_packet

@@ -57,14 +57,14 @@
         go_version: "1.24.7"
         go_checksum: "da18191ddb7db8a9339816f3e2b54bdded8047cdc2a5d67059478f8d1595c43f"
 
-- name: Build ton-indexer binaries
+- name: Build ion-indexer binaries
   hosts: builder
   gather_facts: true
   tasks:
     - name: Create temp workspace
       ansible.builtin.tempfile:
         state: directory
-        suffix: ton-indexer
+        suffix: ion-indexer
       register: builddir
 
     - block:
@@ -78,7 +78,7 @@
             recursive: yes
             delete: no
 
-        - name: Build ton-index-go and ton-metadata-fetcher
+        - name: Build ion-index-go and ion-metadata-fetcher
           ansible.builtin.shell: |
             set -e
             cmake -DCMAKE_BUILD_TYPE=Release \
@@ -88,7 +88,7 @@
                   -DCMAKE_CXX_COMPILER_LAUNCHER=ccache 
             cmake --build "{{ builddir.path }}/build" \
                   --parallel {{ ansible_facts.processor_vcpus | default(2) }} \
-                  --target ton-index-postgres ton-index-postgres-migrate
+                  --target ion-index-postgres ion-index-postgres-migrate
           args:
             chdir: "{{ builddir.path }}"
           environment:
@@ -105,15 +105,15 @@
             dest: "artifacts/"
             flat: true
           loop:
-            - "ton-index-worker/ton-index-postgres/ton-index-postgres"
-            - "ton-index-worker/ton-index-postgres/ton-index-postgres-migrate"
+            - "ion-index-worker/ion-index-postgres/ion-index-postgres"
+            - "ion-index-worker/ion-index-postgres/ion-index-postgres-migrate"
       always:
         - name: Cleanup workspace
           ansible.builtin.file:
             path: "{{ builddir.path }}"
             state: absent
 
-- name: Run migrations and deploy ton-index-postgres service
+- name: Run migrations and deploy ion-index-postgres service
   hosts: "{{ stack_name }}__worker_nodes"
   become: true
   tags: [deploy]
@@ -139,7 +139,7 @@
 
         - name: Copy migrate binary
           ansible.builtin.copy:
-            src: "artifacts/ton-index-postgres-migrate"
+            src: "artifacts/ion-index-postgres-migrate"
             dest: "{{ deploy_path }}/{{ service_name }}_migrate"
             mode: "0755"
             owner: root
@@ -161,9 +161,9 @@
             that: migrate_result.rc == 0
             fail_msg: "DB migration failed. Rolling back to previously running service."
 
-        - name: Copy ton-index-postgres binary
+        - name: Copy ion-index-postgres binary
           ansible.builtin.copy:
-            src: "artifacts/ton-index-postgres"
+            src: "artifacts/ion-index-postgres"
             dest: "{{ deploy_path }}/{{ service_name }}"
             mode: "0755"
             owner: root

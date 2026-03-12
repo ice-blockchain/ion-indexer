@@ -156,7 +156,7 @@ class TonTransferMatcher(BlockMatcher):
         super().__init__(child_matcher=None, parent_matcher=None)
 
     def test_self(self, block: Block):
-        return block.btype == "ton_transfer"
+        return block.btype == "ion_transfer"
 
 
 class ContractMatcher(BlockMatcher):

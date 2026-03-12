@@ -14,8 +14,8 @@ from indexer.events.blocks.utils.tree_utils import EventNode
 def _fill_flow_from_node(flow: AccountValueFlow, node: EventNode):
     if node.message.value is not None:
         assert node.message.direction == "in"
-        flow.add_ton(AccountId(node.message.destination), node.message.value)
-        flow.add_ton(AccountId(node.message.source), -node.message.value)
+        flow.add_ion(AccountId(node.message.destination), node.message.value)
+        flow.add_ion(AccountId(node.message.source), -node.message.value)
         flow.add_fees(AccountId(node.message.destination), node.message.transaction.total_fees)
     elif node.message.direction == "in":
         flow.add_fees(AccountId(node.message.destination), node.message.transaction.total_fees)
@@ -43,7 +43,7 @@ class TonTransferBlock(Block):
         else:
             self.comment = None
 
-        super().__init__('ton_transfer', [node], {
+        super().__init__('ion_transfer', [node], {
             'extra_currencies': node.message.value_extra_currencies,
             'source': AccountId(node.message.source) if node.message.source is not None else None,
             'destination': AccountId(
@@ -58,7 +58,7 @@ class TonTransferBlock(Block):
             elif node.get_tx() is not None and node.get_tx().end_status == 'uninit':
                 self.failed = False
             elif node.message.source is not None and node.get_tx() is not None and node.get_tx().skipped_reason == 'no_gas':
-                self.failed = False # ignore no gas errors on incoming ton transfers
+                self.failed = False # ignore no gas errors on incoming ion transfers
             else:
                 self.failed = True
         self.value = node.message.value

@@ -56,14 +56,14 @@
         go_version: "1.24.7"
         go_checksum: "da18191ddb7db8a9339816f3e2b54bdded8047cdc2a5d67059478f8d1595c43f"
 
-- name: Build ton-indexer binaries
+- name: Build ion-indexer binaries
   hosts: builder
   gather_facts: true
   tasks:
     - name: Create temp workspace
       ansible.builtin.tempfile:
         state: directory
-        suffix: ton-indexer
+        suffix: ion-indexer
       register: builddir
 
     - block:
@@ -77,7 +77,7 @@
             recursive: yes
             delete: no
 
-        - name: Build ton-trace-emulator and ton-trace-ttl-tracker
+        - name: Build ion-trace-emulator and ion-trace-ttl-tracker
           ansible.builtin.shell: |
             set -e
             cmake -DCMAKE_BUILD_TYPE=Release \
@@ -87,7 +87,7 @@
                   -DCMAKE_CXX_COMPILER_LAUNCHER=ccache 
             cmake --build "{{ builddir.path }}/build" \
                   --parallel {{ ansible_facts.processor_vcpus | default(2) }} \
-                  --target ton-trace-emulator ton-trace-ttl-tracker
+                  --target ion-trace-emulator ion-trace-ttl-tracker
           args:
             chdir: "{{ builddir.path }}"
           environment:
@@ -104,8 +104,8 @@
             dest: "artifacts/"
             flat: true
           loop:
-            - "ton-index-worker/ton-trace-emulator/ton-trace-emulator"
-            - "ton-trace-ttl-tracker/ton-trace-ttl-tracker"
+            - "ion-index-worker/ion-trace-emulator/ion-trace-emulator"
+            - "ion-trace-ttl-tracker/ion-trace-ttl-tracker"
       always:
         - name: Cleanup workspace
           ansible.builtin.file:
@@ -142,9 +142,9 @@
         mode: "0755"
         force: true
       with_items:
-        - src: "artifacts/ton-trace-emulator"
+        - src: "artifacts/ion-trace-emulator"
           dest: "{{ deploy_path }}/{{ stack_name }}__trace_emulator"
-        - src: "artifacts/ton-trace-ttl-tracker"
+        - src: "artifacts/ion-trace-ttl-tracker"
           dest: "{{ deploy_path }}/{{ stack_name }}__trace_ttl_tracker"
 
     - name: Refresh linker cache

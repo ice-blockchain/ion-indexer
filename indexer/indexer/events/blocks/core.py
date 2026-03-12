@@ -35,17 +35,17 @@ def _ensure_earliest_common_block(blocks: list[Block]) -> Block | None:
 
 
 class AccountFlow:
-    ton: int
+    ion: int
     fees: int
     jettons: dict[AccountId, int]
 
     def __init__(self):
-        self.ton = 0
+        self.ion = 0
         self.fees = 0
         self.jettons = {}
 
     def merge(self, other: AccountFlow):
-        self.ton += other.ton
+        self.ion += other.ion
         self.fees += other.fees
         for jetton, amount in other.jettons.items():
             if jetton not in self.jettons:
@@ -54,7 +54,7 @@ class AccountFlow:
 
     def to_dict(self):
         return {
-            'ton': str(self.ton),
+            'ion': str(self.ion),
             'fees': str(self.fees),
             'jettons': {str(jetton): str(amount) for jetton, amount in self.jettons.items()}
         }
@@ -71,10 +71,10 @@ class AccountValueFlow:
             'flow': {str(account): flow.to_dict() for account, flow in self.flow.items()}
         }
 
-    def add_ton(self, account: AccountId, amount: int):
+    def add_ion(self, account: AccountId, amount: int):
         if account not in self.flow:
             self.flow[account] = AccountFlow()
-        self.flow[account].ton += amount
+        self.flow[account].ion += amount
 
     def add_jetton(self, account: AccountId, jetton: AccountId, amount: int):
         if account not in self.flow:
