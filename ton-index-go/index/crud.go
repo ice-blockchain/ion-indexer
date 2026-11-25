@@ -41,6 +41,13 @@ func getSortOrder(order SortType) (string, error) {
 	return "", IndexError{Code: 422, Message: "wrong value for sort parameter"}
 }
 
+func validateMessageDirection(direction *string) error {
+	if direction != nil && *direction != "in" && *direction != "out" {
+		return IndexError{Code: 422, Message: "wrong value for direction parameter"}
+	}
+	return nil
+}
+
 // query builders
 func limitQuery(lim LimitRequest, settings RequestSettings) (string, error) {
 	query := ``
@@ -229,6 +236,9 @@ func buildTransactionsQuery(
 
 	// transaction by message
 	by_msg := false
+	if err := validateMessageDirection(msg_req.Direction); err != nil {
+		return "", err
+	}
 	if v := msg_req.Direction; v != nil {
 		by_msg = true
 		filter_list = append(filter_list, fmt.Sprintf("M.direction = '%s'", *v))
@@ -311,6 +321,9 @@ func buildMessagesQuery(
 	lim_req LimitRequest,
 	settings RequestSettings,
 ) (string, error) {
+	if err := validateMessageDirection(msg_req.Direction); err != nil {
+		return "", err
+	}
 	rest_columns := `M.trace_id, M.source, M.destination, M.value, 
 		M.value_extra_currencies, M.fwd_fee, M.ihr_fee, M.created_lt, M.created_at, M.opcode, M.ihr_disabled, M.bounce, 
 		M.bounced, M.import_fee, M.body_hash, M.init_state_hash`
@@ -2348,7 +2361,7 @@ func (db *DbClient) QueryTransactions(
 		log.Println("Debug query:", query)
 	}
 	if err != nil {
-		return nil, nil, IndexError{Code: 500, Message: err.Error()}
+		return nil, nil, err
 	}
 
 	// read data
@@ -2478,7 +2491,7 @@ func (db *DbClient) QueryMessages(
 		log.Println("Debug query:", query)
 	}
 	if err != nil {
-		return nil, nil, nil, IndexError{Code: 500, Message: err.Error()}
+		return nil, nil, nil, err
 	}
 
 	// read data
