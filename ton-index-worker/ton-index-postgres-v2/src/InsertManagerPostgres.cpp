@@ -2087,6 +2087,7 @@ void InsertManagerPostgres::start_up() {
     query += (
       "create index if not exists trace_unclassified_index on traces (state, start_lt) include (trace_id, nodes_) where (classification_state = 'unclassified'::trace_classification_state);\n"
       "create index if not exists _classifier_tasks_mc_seqno_idx on _classifier_tasks (mc_seqno desc);\n"
+      "create index if not exists _classifier_tasks_id_idx on _classifier_tasks (id);\n"
     );
 
     LOG(DEBUG) << query;
@@ -2304,6 +2305,7 @@ void InsertManagerPostgres::start_up() {
         "create index if not exists transactions_index_8 on transactions (mc_block_seqno, lt);\n"
         "create index if not exists transactions_index_7 on transactions (trace_id, lt);\n"
         "create index if not exists _classifier_tasks_mc_seqno_idx on _classifier_tasks (mc_seqno desc);\n"
+        "create index if not exists _classifier_tasks_id_idx on _classifier_tasks (id);\n"
         "create index if not exists actions_index_3 on actions (end_lt);\n"
         "create index if not exists actions_index_2 on actions (action_id);\n"
         "create index if not exists actions_index_1 on actions (trace_id, start_lt, end_lt);\n"
