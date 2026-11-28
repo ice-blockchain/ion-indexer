@@ -146,7 +146,7 @@ class ExclusiveOrMatcher(OrMatcher):
         super().__init__(matchers, optional)
 
     def test_self(self, block: Block):
-        matched = [m.test_self(block) for m in self.matchers]
+        matched = [bool(m.test_self(block)) for m in self.matchers]
         return sum(matched) == 1
 
 
